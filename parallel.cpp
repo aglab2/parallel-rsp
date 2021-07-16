@@ -5,8 +5,7 @@
 #endif
 #include <stdint.h>
 
-#include "m64p_plugin.h"
-#include "rsp_1.1.h"
+#include "Zilmar_Rsp.h"
 
 #define RSP_PARALLEL_VERSION 0x0101
 #define RSP_PLUGIN_API_VERSION 0x020000
@@ -50,7 +49,7 @@ extern "C"
 	}
 #endif
 
-	EXPORT unsigned int CALL parallelRSPDoRspCycles(unsigned int cycles)
+	EXPORT unsigned int CALL DoRspCycles(unsigned int cycles)
 	{
 		if (*RSP::rsp.SP_STATUS_REG & (SP_STATUS_HALT | SP_STATUS_BROKE))
 			return 0;
@@ -95,31 +94,21 @@ extern "C"
 		return cycles;
 	}
 
-	EXPORT m64p_error CALL parallelRSPPluginGetVersion(m64p_plugin_type *PluginType, int *PluginVersion,
-	                                                   int *APIVersion, const char **PluginNamePtr, int *Capabilities)
+	EXPORT void CALL GetDllInfo(PLUGIN_INFO * PluginInfo)
 	{
-		/* set version info */
-		if (PluginType != NULL)
-			*PluginType = M64PLUGIN_RSP;
-
-		if (PluginVersion != NULL)
-			*PluginVersion = RSP_PARALLEL_VERSION;
-
-		if (APIVersion != NULL)
-			*APIVersion = RSP_PLUGIN_API_VERSION;
-
-		if (Capabilities != NULL)
-			*Capabilities = 0;
-
-		return M64ERR_SUCCESS;
+		PluginInfo->Version = 0x0101;
+		PluginInfo->Type = PLUGIN_TYPE_RSP;
+		strcpy(PluginInfo->Name, "ParaLLel RSP Plugin");
+		PluginInfo->NormalMemory = 1;
+		PluginInfo->MemoryBswaped = 1;
 	}
 
-	EXPORT void CALL parallelRSPRomClosed(void)
+	EXPORT void CALL RomClosed(void)
 	{
 		*RSP::rsp.SP_PC_REG = 0x00000000;
 	}
 
-	EXPORT void CALL parallelRSPInitiateRSP(RSP_INFO Rsp_Info, unsigned int *CycleCount)
+	EXPORT void CALL InitiateRSP(RSP_INFO Rsp_Info, unsigned int *CycleCount)
 	{
 		if (CycleCount)
 			*CycleCount = 0;
@@ -157,5 +146,13 @@ extern "C"
 		RSP::cpu.set_dmem(reinterpret_cast<uint32_t *>(Rsp_Info.DMEM));
 		RSP::cpu.set_imem(reinterpret_cast<uint32_t *>(Rsp_Info.IMEM));
 		RSP::cpu.set_rdram(reinterpret_cast<uint32_t *>(Rsp_Info.RDRAM));
+	}
+
+	EXPORT void CALL CloseDLL(void)
+	{
+	}
+
+	EXPORT void CALL DllConfig(int hWnd)
+	{
 	}
 }

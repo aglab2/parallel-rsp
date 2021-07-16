@@ -1,8 +1,8 @@
 #include "../state.hpp"
 
 #ifdef PARALLEL_INTEGRATION
-#include "../rsp_1.1.h"
-#include "m64p_plugin.h"
+#include "../Zilmar_Rsp.h"
+
 namespace RSP
 {
 extern RSP_INFO rsp;
