@@ -168,13 +168,26 @@ extern "C"
 	void RSP_LPV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(LPV);
-		if (e != 0)
-			return;
 
 		unsigned addr = (rsp->sr[base] + offset * 8) & 0xfff;
 		auto *reg = rsp->cp2.regs[rt].e;
-		for (unsigned i = 0; i < 8; i++)
-			reg[i] = READ_MEM_U8(rsp->dmem, (addr + i) & 0xfff) << 8;
+
+		if (e != 0)
+		{
+			addr += -e & 0xf;
+			for (unsigned b = 0; b < 8; b++)
+			{
+				reg[b] = READ_MEM_U8(rsp->dmem, addr) << 8;
+				--e;
+				addr -= e ? 0 : 16;
+				++addr;
+			}
+		}
+		else
+		{
+			for (unsigned i = 0; i < 8; i++)
+				reg[i] = READ_MEM_U8(rsp->dmem, (addr + i) & 0xfff) << 8;
+		}
 	}
 
 	void RSP_SPV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
@@ -219,12 +232,24 @@ extern "C"
 	void RSP_SUV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(SUV);
-		if (e != 0)
-			return;
+		
 		unsigned addr = (rsp->sr[base] + offset * 8) & 0xfff;
 		auto *reg = rsp->cp2.regs[rt].e;
-		for (unsigned i = 0; i < 8; i++)
-			WRITE_MEM_U8(rsp->dmem, (addr + i) & 0xfff, int16_t(reg[i]) >> 7);
+
+		if (e != 0)
+		{
+			addr += -e & 0xf;
+			for (unsigned b = 0; b < 8; b++)
+			{
+				WRITE_MEM_U8(rsp->dmem, addr & 0xfff, int16_t(reg[b]) >> 7);
+				--e;
+				addr -= e ? 0 : 16;
+				++addr;
+			}
+		} else {
+			for (unsigned i = 0; i < 8; i++)
+				WRITE_MEM_U8(rsp->dmem, (addr + i) & 0xfff, int16_t(reg[i]) >> 7);
+		}
 	}
 
 	// Load 8x8-bits into high bits, but shift by 7 instead of 8.
