@@ -1,9 +1,10 @@
 #include "../state.hpp"
+#include "../jit_decl.h"
 
 extern "C"
 {
 
-	void RSP_CFC2(RSP::CPUState *rsp, unsigned rt, unsigned rd)
+	void JIT_DECL RSP_CFC2(RSP::CPUState *rsp, unsigned rt, unsigned rd)
 	{
 		unsigned src = rd & 3;
 		if (src == 3)
@@ -14,7 +15,7 @@ extern "C"
 			rsp->sr[rt] = res;
 	}
 
-	void RSP_CTC2(RSP::CPUState *rsp, unsigned rt, unsigned rd)
+	void JIT_DECL RSP_CTC2(RSP::CPUState *rsp, unsigned rt, unsigned rd)
 	{
 		rt = rsp->sr[rt] & 0xffff;
 
@@ -27,7 +28,7 @@ extern "C"
 		rsp_set_flags(rsp->cp2.flags[dst].e, rt);
 	}
 
-	void RSP_MTC2(RSP::CPUState *rsp, unsigned rt, unsigned rd, unsigned element)
+	void JIT_DECL RSP_MTC2(RSP::CPUState *rsp, unsigned rt, unsigned rd, unsigned element)
 	{
 #ifdef INTENSE_DEBUG
 		fprintf(stderr, "MTC2, rt = %u, [rt] = 0x%x, rd = %u, e = %u\n", rt, rsp->sr[rt], rd, element);
@@ -46,7 +47,7 @@ extern "C"
 			e[element >> 1] = v;
 	}
 
-	void RSP_MFC2(RSP::CPUState *rsp, unsigned rt, unsigned rd, unsigned element)
+	void JIT_DECL RSP_MFC2(RSP::CPUState *rsp, unsigned rt, unsigned rd, unsigned element)
 	{
 		if (rt == 0)
 			return;

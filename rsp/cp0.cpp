@@ -1,4 +1,5 @@
 #include "../state.hpp"
+#include "../jit_decl.h"
 
 #ifdef PARALLEL_INTEGRATION
 #include "../Zilmar_Rsp.h"
@@ -24,7 +25,7 @@ extern "C"
 	void log_rsp_mem_parallel(void);
 #endif
 
-	int RSP_MFC0(RSP::CPUState *rsp, unsigned rt, unsigned rd)
+	int JIT_DECL RSP_MFC0(RSP::CPUState *rsp, unsigned rt, unsigned rd)
 	{
 		rd &= 15;
 		uint32_t res = *rsp->cp0.cr[rd];
@@ -222,7 +223,7 @@ extern "C"
 	}
 #endif
 
-	int RSP_MTC0(RSP::CPUState *rsp, unsigned rd, unsigned rt)
+	int JIT_DECL RSP_MTC0(RSP::CPUState *rsp, unsigned rd, unsigned rt)
 	{
 		uint32_t val = rsp->sr[rt];
 

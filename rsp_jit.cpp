@@ -234,12 +234,12 @@ end:
 extern "C"
 {
 #define BYTE_ENDIAN_FIXUP(x, off) ((((x) + (off)) ^ 3) & 0xfffu)
-	static Func rsp_enter(void *cpu, unsigned pc)
+	static Func JIT_DECL rsp_enter(void *cpu, unsigned pc)
 	{
 		return static_cast<CPU *>(cpu)->get_jit_block(pc);
 	}
 
-	static jit_word_t rsp_unaligned_lh(const uint8_t *dram, jit_word_t addr)
+	static jit_word_t JIT_DECL rsp_unaligned_lh(const uint8_t *dram, jit_word_t addr)
 	{
 		auto off0 = BYTE_ENDIAN_FIXUP(addr, 0);
 		auto off1 = BYTE_ENDIAN_FIXUP(addr, 1);
@@ -247,7 +247,7 @@ extern "C"
 		                          (dram[off1] << 0)));
 	}
 
-	static jit_word_t rsp_unaligned_lw(const uint8_t *dram, jit_word_t addr)
+	static jit_word_t JIT_DECL rsp_unaligned_lw(const uint8_t *dram, jit_word_t addr)
 	{
 		auto off0 = BYTE_ENDIAN_FIXUP(addr, 0);
 		auto off1 = BYTE_ENDIAN_FIXUP(addr, 1);
@@ -261,7 +261,7 @@ extern "C"
 		                  (int32_t(dram[off3]) << 0));
 	}
 
-	static jit_uword_t rsp_unaligned_lhu(const uint8_t *dram, jit_word_t addr)
+	static jit_uword_t JIT_DECL rsp_unaligned_lhu(const uint8_t *dram, jit_word_t addr)
 	{
 		auto off0 = BYTE_ENDIAN_FIXUP(addr, 0);
 		auto off1 = BYTE_ENDIAN_FIXUP(addr, 1);
@@ -269,7 +269,7 @@ extern "C"
 		                          (dram[off1] << 0)));
 	}
 
-	static void rsp_unaligned_sh(uint8_t *dram, jit_word_t addr, jit_word_t data)
+	static void JIT_DECL rsp_unaligned_sh(uint8_t *dram, jit_word_t addr, jit_word_t data)
 	{
 		auto off0 = BYTE_ENDIAN_FIXUP(addr, 0);
 		auto off1 = BYTE_ENDIAN_FIXUP(addr, 1);
@@ -277,7 +277,7 @@ extern "C"
 		dram[off1] = (data >> 0) & 0xff;
 	}
 
-	static void rsp_unaligned_sw(uint8_t *dram, jit_word_t addr, jit_word_t data)
+	static void JIT_DECL rsp_unaligned_sw(uint8_t *dram, jit_word_t addr, jit_word_t data)
 	{
 		auto off0 = BYTE_ENDIAN_FIXUP(addr, 0);
 		auto off1 = BYTE_ENDIAN_FIXUP(addr, 1);
@@ -291,7 +291,7 @@ extern "C"
 	}
 
 #ifdef TRACE
-	static void rsp_report_pc(const CPUState *state, jit_uword_t pc, jit_uword_t instr)
+	static void JIT_DECL rsp_report_pc(const CPUState *state, jit_uword_t pc, jit_uword_t instr)
 	{
 		auto disasm = disassemble(pc, instr);
 		disasm += " (" + std::to_string(hash_registers(state)) + ") (" + std::to_string(hash_dmem(state)) + ")";
@@ -300,7 +300,7 @@ extern "C"
 #endif
 
 #ifdef TRACE_ENTER
-	static void rsp_report_enter(jit_uword_t pc)
+	static void JIT_DECL rsp_report_enter(jit_uword_t pc)
 	{
 		printf("  ... Enter 0x%03x ...  ", unsigned(pc & 0xffcu));
 	}
@@ -341,7 +341,7 @@ void CPU::jit_begin_call(jit_state_t *_jit)
 	jit_prepare();
 }
 
-void CPU::jit_end_call(jit_state_t *_jit, jit_pointer_t ptr)
+void CPU::jit_end_call(jit_state_t *_jit, Func ptr)
 {
 	jit_finishi(ptr);
 
@@ -440,9 +440,9 @@ void CPU::init_jit_thunks()
 	jit_set_code(thunk_code, code_size);
 	jit_set_data(thunk_data, data_size + note_size, 0 /*flags*/);
 
-	thunks.enter_frame = reinterpret_cast<int (*)(void *)>(jit_emit());
-	thunks.enter_thunk = jit_address(entry_label);
-	thunks.return_thunk = jit_address(return_label);
+	thunks.enter_frame = reinterpret_cast<int (JIT_DECL *)(void *)>(jit_emit());
+	thunks.enter_thunk = (Func) jit_address(entry_label);
+	thunks.return_thunk = (Func) jit_address(return_label);
 
 	//printf(" === DISASM ===\n");
 	//jit_disassemble();
@@ -729,7 +729,7 @@ void CPU::jit_exit_dynamic(jit_state_t *_jit, uint32_t pc, const InstructionInfo
 void CPU::jit_emit_store_operation(jit_state_t *_jit,
                                    uint32_t pc, uint32_t instr,
                                    void (*jit_emitter)(jit_state_t *jit, unsigned, unsigned, unsigned), const char *asmop,
-                                   jit_pointer_t rsp_unaligned_op,
+                                   Func rsp_unaligned_op,
                                    uint32_t endian_flip,
                                    const InstructionInfo &last_info)
 {
@@ -789,7 +789,7 @@ void CPU::jit_emit_store_operation(jit_state_t *_jit,
 void CPU::jit_emit_load_operation(jit_state_t *_jit,
                                   uint32_t pc, uint32_t instr,
                                   void (*jit_emitter)(jit_state_t *jit, unsigned, unsigned, unsigned), const char *asmop,
-                                  jit_pointer_t rsp_unaligned_op,
+                                  Func rsp_unaligned_op,
                                   uint32_t endian_flip,
                                   const InstructionInfo &last_info)
 {
@@ -880,7 +880,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		uint32_t vt = (instr >> 16) & 31;
 		uint32_t e = (instr >> 21) & 15;
 
-		using VUOp = void (*)(RSP::CPUState *, unsigned vd, unsigned vs, unsigned vt, unsigned e);
+		using VUOp = void (JIT_DECL *)(RSP::CPUState *, unsigned vd, unsigned vs, unsigned vt, unsigned e);
 
 		static const VUOp ops[64] = {
 			RSP_VMULF, RSP_VMULU, RSP_VRNDP, RSP_VMULQ, RSP_VMUDL, RSP_VMUDM, RSP_VMUDN, RSP_VMUDH, RSP_VMACF, RSP_VMACU, RSP_VRNDN,
@@ -902,7 +902,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		jit_pushargi(vs);
 		jit_pushargi(vt);
 		jit_pushargi(e);
-		jit_end_call(_jit ,reinterpret_cast<jit_pointer_t>(vuop));
+		jit_end_call(_jit, (Func) vuop);
 		return;
 	}
 
@@ -1454,7 +1454,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			jit_pushargr(JIT_REGISTER_STATE);
 			jit_pushargi(rt);
 			jit_pushargi(rd);
-			jit_end_call(_jit, reinterpret_cast<jit_pointer_t>(RSP_MFC0));
+			jit_end_call(_jit, reinterpret_cast<Func>(RSP_MFC0));
 			jit_retval(JIT_REGISTER_MODE);
 
 			jit_node_t *noexit = jit_beqi(JIT_REGISTER_MODE, MODE_CONTINUE);
@@ -1472,7 +1472,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			jit_pushargr(JIT_REGISTER_STATE);
 			jit_pushargi(rd);
 			jit_pushargi(rt);
-			jit_end_call(_jit, reinterpret_cast<jit_pointer_t>(RSP_MTC0));
+			jit_end_call(_jit, reinterpret_cast<Func>(RSP_MTC0));
 			jit_retval(JIT_REGISTER_MODE);
 
 			jit_node_t *noexit = jit_beqi(JIT_REGISTER_MODE, MODE_CONTINUE);
@@ -1506,7 +1506,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			jit_pushargi(rt);
 			jit_pushargi(rd);
 			jit_pushargi(imm);
-			jit_end_call(_jit, reinterpret_cast<jit_pointer_t>(RSP_MFC2));
+			jit_end_call(_jit, reinterpret_cast<Func>(RSP_MFC2));
 			break;
 		}
 
@@ -1518,7 +1518,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			jit_pushargr(JIT_REGISTER_STATE);
 			jit_pushargi(rt);
 			jit_pushargi(rd);
-			jit_end_call(_jit, reinterpret_cast<jit_pointer_t>(RSP_CFC2));
+			jit_end_call(_jit, reinterpret_cast<Func>(RSP_CFC2));
 			break;
 		}
 
@@ -1531,7 +1531,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			jit_pushargi(rt);
 			jit_pushargi(rd);
 			jit_pushargi(imm);
-			jit_end_call(_jit, reinterpret_cast<jit_pointer_t>(RSP_MTC2));
+			jit_end_call(_jit, reinterpret_cast<Func>(RSP_MTC2));
 			break;
 		}
 
@@ -1544,7 +1544,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			jit_pushargr(JIT_REGISTER_STATE);
 			jit_pushargi(rt);
 			jit_pushargi(rd);
-			jit_end_call(_jit, reinterpret_cast<jit_pointer_t>(RSP_CTC2));
+			jit_end_call(_jit, reinterpret_cast<Func>(RSP_CTC2));
 			break;
 		}
 
@@ -1569,7 +1569,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		jit_emit_load_operation(_jit, pc, instr,
 		                        [](jit_state_t *_jit, unsigned a, unsigned b, unsigned c) { jit_ldxr_s(a, b, c); },
 		                        "lh",
-		                        reinterpret_cast<jit_pointer_t>(rsp_unaligned_lh),
+		                        reinterpret_cast<Func>(rsp_unaligned_lh),
 		                        2, last_info);
 		break;
 	}
@@ -1580,7 +1580,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		jit_emit_load_operation(_jit, pc, instr,
 		                        [](jit_state_t *_jit, unsigned a, unsigned b, unsigned c) { jit_ldxr_i(a, b, c); },
 		                        "lw",
-		                        reinterpret_cast<jit_pointer_t>(rsp_unaligned_lw),
+		                        reinterpret_cast<Func>(rsp_unaligned_lw),
 		                        0, last_info);
 		break;
 	}
@@ -1600,7 +1600,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		jit_emit_load_operation(_jit, pc, instr,
 		                        [](jit_state_t *_jit, unsigned a, unsigned b, unsigned c) { jit_ldxr_us(a, b, c); },
 		                        "lhu",
-		                        reinterpret_cast<jit_pointer_t>(rsp_unaligned_lhu),
+		                        reinterpret_cast<Func>(rsp_unaligned_lhu),
 		                        2, last_info);
 		break;
 	}
@@ -1620,7 +1620,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		jit_emit_store_operation(_jit, pc, instr,
 		                         [](jit_state_t *_jit, unsigned a, unsigned b, unsigned c) { jit_stxr_s(a, b, c); },
 		                         "sh",
-		                         reinterpret_cast<jit_pointer_t>(rsp_unaligned_sh),
+		                         reinterpret_cast<Func>(rsp_unaligned_sh),
 		                         2, last_info);
 		break;
 	}
@@ -1630,7 +1630,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		jit_emit_store_operation(_jit, pc, instr,
 		                         [](jit_state_t *_jit, unsigned a, unsigned b, unsigned c) { jit_stxr_i(a, b, c); },
 		                         "sh",
-		                         reinterpret_cast<jit_pointer_t>(rsp_unaligned_sw),
+		                         reinterpret_cast<Func>(rsp_unaligned_sw),
 		                         0, last_info);
 		break;
 	}
@@ -1646,7 +1646,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		unsigned rd = (instr >> 11) & 31;
 		unsigned imm = (instr >> 7) & 15;
 
-		using LWC2Op = void (*)(RSP::CPUState *, unsigned rt, unsigned imm, int simm, unsigned rs);
+		using LWC2Op = void (JIT_DECL *)(RSP::CPUState *, unsigned rt, unsigned imm, int simm, unsigned rs);
 		static const LWC2Op ops[32] = {
 			RSP_LBV, RSP_LSV, RSP_LLV, RSP_LDV, RSP_LQV, RSP_LRV, RSP_LPV, RSP_LUV, RSP_LHV, RSP_LFV, nullptr, RSP_LTV,
 		};
@@ -1662,7 +1662,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			jit_pushargi(imm);
 			jit_pushargi(simm);
 			jit_pushargi(rs);
-			jit_end_call(_jit, reinterpret_cast<jit_pointer_t>(op));
+			jit_end_call(_jit, reinterpret_cast<Func>(op));
 		}
 		break;
 	}
@@ -1678,7 +1678,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		unsigned rd = (instr >> 11) & 31;
 		unsigned imm = (instr >> 7) & 15;
 
-		using SWC2Op = void (*)(RSP::CPUState *, unsigned rt, unsigned imm, int simm, unsigned rs);
+		using SWC2Op = void (JIT_DECL *)(RSP::CPUState *, unsigned rt, unsigned imm, int simm, unsigned rs);
 		static const SWC2Op ops[32] = {
 			RSP_SBV, RSP_SSV, RSP_SLV, RSP_SDV, RSP_SQV, RSP_SRV, RSP_SPV, RSP_SUV, RSP_SHV, RSP_SFV, RSP_SWV, RSP_STV,
 		};
@@ -1694,7 +1694,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			jit_pushargi(imm);
 			jit_pushargi(simm);
 			jit_pushargi(rs);
-			jit_end_call(_jit, reinterpret_cast<jit_pointer_t>(op));
+			jit_end_call(_jit, reinterpret_cast<Func>(op));
 		}
 		break;
 	}

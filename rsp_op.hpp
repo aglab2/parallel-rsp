@@ -2,23 +2,24 @@
 #define RSP_OP_HPP__
 
 #include "state.hpp"
+#include "jit_decl.h"
 
 extern "C"
 {
-	int RSP_MFC0(RSP::CPUState *rsp, unsigned rt, unsigned rd);
-	int RSP_MTC0(RSP::CPUState *rsp, unsigned rd, unsigned rt);
+	int JIT_DECL RSP_MFC0(RSP::CPUState *rsp, unsigned rt, unsigned rd);
+	int JIT_DECL RSP_MTC0(RSP::CPUState *rsp, unsigned rd, unsigned rt);
 
-	void RSP_MTC2(RSP::CPUState *rsp, unsigned rt, unsigned vd, unsigned e);
-	void RSP_MFC2(RSP::CPUState *rsp, unsigned rt, unsigned vs, unsigned e);
-	void RSP_CFC2(RSP::CPUState *rsp, unsigned rt, unsigned rd);
-	void RSP_CTC2(RSP::CPUState *rsp, unsigned rt, unsigned rd);
+	void JIT_DECL RSP_MTC2(RSP::CPUState *rsp, unsigned rt, unsigned vd, unsigned e);
+	void JIT_DECL RSP_MFC2(RSP::CPUState *rsp, unsigned rt, unsigned vs, unsigned e);
+	void JIT_DECL RSP_CFC2(RSP::CPUState *rsp, unsigned rt, unsigned rd);
+	void JIT_DECL RSP_CTC2(RSP::CPUState *rsp, unsigned rt, unsigned rd);
 
-	void RSP_CALL(void *opaque, unsigned target, unsigned ret);
-	void RSP_RETURN(void *opaque, unsigned pc);
-	void RSP_EXIT(void *opaque, int mode);
-	void RSP_REPORT_PC(void *rsp, unsigned pc, unsigned instr);
+	void JIT_DECL RSP_CALL(void *opaque, unsigned target, unsigned ret);
+	void JIT_DECL RSP_RETURN(void *opaque, unsigned pc);
+	void JIT_DECL RSP_EXIT(void *opaque, int mode);
+	void JIT_DECL RSP_REPORT_PC(void *rsp, unsigned pc, unsigned instr);
 
-#define DECL_LS(op) void RSP_##op(RSP::CPUState *rsp, unsigned rt, unsigned element, int offset, unsigned base)
+#define DECL_LS(op) void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned rt, unsigned element, int offset, unsigned base)
 
 	DECL_LS(LBV);
 	DECL_LS(LSV);
@@ -46,7 +47,7 @@ extern "C"
 	DECL_LS(SWV);
 	DECL_LS(STV);
 
-#define DECL_COP2(op) void RSP_##op(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+#define DECL_COP2(op) void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	DECL_COP2(VMULF);
 	DECL_COP2(VMULU);
 	DECL_COP2(VRNDP);

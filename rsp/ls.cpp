@@ -1,4 +1,5 @@
 #include "../state.hpp"
+#include "../jit_decl.h"
 
 #ifdef TRACE_COP2
 #include <stdio.h>
@@ -28,7 +29,7 @@ extern "C"
 	}
 	
 	// Load 8-bit
-	void RSP_LBV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_LBV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(LBV);
 		unsigned addr = (rsp->sr[base] + offset * 1) & 0xfff;
@@ -36,7 +37,7 @@ extern "C"
 	}
 
 	// Store 8-bit
-	void RSP_SBV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_SBV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(SBV);
 		unsigned addr = (rsp->sr[base] + offset * 1) & 0xfff;
@@ -50,7 +51,7 @@ extern "C"
 	}
 
 	// Load 16-bit
-	void RSP_LSV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_LSV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(LSV);
 		unsigned addr = rsp->sr[base] + offset * 2;
@@ -60,7 +61,7 @@ extern "C"
 	}
 
 	// Store 16-bit
-	void RSP_SSV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_SSV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(SSV);
 		unsigned addr = (rsp->sr[base] + offset * 2) & 0xfff;
@@ -76,7 +77,7 @@ extern "C"
 	}
 
 	// Load 32-bit
-	void RSP_LLV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_LLV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(LLV);
 		unsigned addr = rsp->sr[base] + offset * 4;
@@ -86,7 +87,7 @@ extern "C"
 	}
 
 	// Store 32-bit
-	void RSP_SLV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_SLV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(SLV);
 		unsigned addr = (rsp->sr[base] + offset * 4) & 0xfff;
@@ -100,7 +101,7 @@ extern "C"
 	}
 
 	// Load 64-bit
-	void RSP_LDV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_LDV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(LDV);
 		unsigned addr = rsp->sr[base] + offset * 8;
@@ -110,7 +111,7 @@ extern "C"
 	}
 
 	// Store 64-bit
-	void RSP_SDV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_SDV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(SDV);
 		unsigned addr = (rsp->sr[base] + offset * 8) & 0xfff;
@@ -139,7 +140,7 @@ extern "C"
 	}
 
 	// Load 8x8-bit into high bits.
-	void RSP_LPV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_LPV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(LPV);
 		unsigned addr = (rsp->sr[base] + offset * 8) & 0xfff;
@@ -151,7 +152,7 @@ extern "C"
 			reg[i] = READ_MEM_U8(rsp->dmem, (addr + (i + index & 0xf)) & 0xfff) << 8;
 	}
 
-	void RSP_SPV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_SPV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(SPV);
 		unsigned addr = (rsp->sr[base] + offset * 8) & 0xfff;
@@ -166,7 +167,7 @@ extern "C"
 	// Load 8x8-bit into high bits, but shift by 7 instead of 8.
 	// Was probably used for certain fixed point algorithms to get more headroom without
 	// saturation, but weird nonetheless.
-	void RSP_LUV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_LUV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(LUV);
 		unsigned addr = (rsp->sr[base] + offset * 8) & 0xfff;
@@ -178,7 +179,7 @@ extern "C"
 			reg[i] = READ_MEM_U8(rsp->dmem, (addr + (i + index & 0xf)) & 0xfff) << 7;
 	}
 
-	void RSP_SUV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_SUV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(SUV);
 		unsigned addr = (rsp->sr[base] + offset * 8) & 0xfff;
@@ -192,7 +193,7 @@ extern "C"
 
 	// Load 8x8-bits into high bits, but shift by 7 instead of 8.
 	// Seems to differ from LUV in that it loads every other byte instead of packed bytes.
-	void RSP_LHV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_LHV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(LHV);
 		unsigned addr = rsp->sr[base] + offset * 16;
@@ -204,7 +205,7 @@ extern "C"
 			reg[i] = (uint16_t)READ_MEM_U8(rsp->dmem, (addr + (index + i * 2 & 0xf)) & 0xfff) << 7;
 	}
 
-	void RSP_SHV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_SHV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(SHV);
 		unsigned addr = (rsp->sr[base] + offset * 16) & 0xfff;
@@ -220,7 +221,7 @@ extern "C"
 		}
 	}
 
-	void RSP_LFV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_LFV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(LFV);
 		uint16_t temp[8];
@@ -246,7 +247,7 @@ extern "C"
 	WRITE_MEM_U8(rsp->dmem, addr + (8 + base & 0xf), int16_t(reg[c]) >> 7); \
 	WRITE_MEM_U8(rsp->dmem, addr + (12 + base & 0xf), int16_t(reg[d]) >> 7);
 
-	void RSP_SFV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_SFV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(SFV);
 		unsigned addr = (rsp->sr[base] + offset * 16) & 0xfff;
@@ -287,7 +288,7 @@ extern "C"
 		}
 	}
 
-	void RSP_LWV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_LWV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(LWV);
 		unsigned addr = rsp->sr[base] + offset * 16;
@@ -298,7 +299,7 @@ extern "C"
 		}
 	}
 
-	void RSP_SWV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_SWV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(SWV);
 
@@ -310,7 +311,7 @@ extern "C"
 			WRITE_MEM_U8(rsp->dmem, addr + (base++ & 0xf), byteFromHalfWords(rsp->cp2.regs[rt].e, i & 0xf));
 	}
 
-	void RSP_LQV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_LQV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(LQV);
 		unsigned addr = rsp->sr[base] + offset * 16;
@@ -321,7 +322,7 @@ extern "C"
 			writeByteToHalfWords(rsp->cp2.regs[rt].e, i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
 	}
 
-	void RSP_SQV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_SQV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(SQV);
 		unsigned addr = (rsp->sr[base] + offset * 16) & 0xfff;
@@ -331,7 +332,7 @@ extern "C"
 			WRITE_MEM_U8(rsp->dmem, addr++, byteFromHalfWords(rsp->cp2.regs[rt].e, i & 15));
 	}
 
-	void RSP_LRV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_LRV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(LRV);
 		unsigned addr = rsp->sr[base] + offset * 16;
@@ -342,7 +343,7 @@ extern "C"
 			writeByteToHalfWords(rsp->cp2.regs[rt].e, i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
 	}
 
-	void RSP_SRV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_SRV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(SRV);
 		unsigned addr = (rsp->sr[base] + offset * 16) & 0xfff;
@@ -354,7 +355,7 @@ extern "C"
 			WRITE_MEM_U8(rsp->dmem, addr++, byteFromHalfWords(rsp->cp2.regs[rt].e, i + base & 0xf));
 	}
 
-	void RSP_LTV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_LTV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(LTV);
 		unsigned addr = rsp->sr[base] + offset * 16;
@@ -373,7 +374,7 @@ extern "C"
 		}
 	}
 
-	void RSP_STV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	void JIT_DECL RSP_STV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
 	{
 		TRACE_LS(STV);
 		e &= ~1;

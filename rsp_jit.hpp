@@ -11,6 +11,7 @@
 #include "rsp_op.hpp"
 #include "state.hpp"
 #include "jit_allocator.hpp"
+#include "jit_decl.h"
 
 extern "C"
 {
@@ -21,7 +22,7 @@ namespace RSP
 {
 namespace JIT
 {
-using Func = jit_pointer_t;
+typedef void(JIT_DECL *Func)(void);
 
 class RegisterCache
 {
@@ -140,7 +141,7 @@ private:
 
 	struct
 	{
-		int (*enter_frame)(void *state) = nullptr;
+		int(JIT_DECL *enter_frame)(void *state) = nullptr;
 
 		Func enter_thunk = nullptr;
 		Func return_thunk = nullptr;
@@ -169,17 +170,17 @@ private:
 	void jit_mark_block_entries(uint32_t pc, uint32_t end, bool *block_entries);
 	void jit_emit_load_operation(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 	                             void (*jit_emitter)(jit_state_t *_jit, unsigned, unsigned, unsigned), const char *asmop,
-	                             jit_pointer_t rsp_unaligned_op,
+	                             Func rsp_unaligned_op,
 	                             uint32_t endian_flip,
 	                             const InstructionInfo &last_info);
 	void jit_emit_store_operation(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 	                              void (*jit_emitter)(jit_state_t *_jit, unsigned, unsigned, unsigned), const char *asmop,
-	                              jit_pointer_t rsp_unaligned_op,
+	                              Func rsp_unaligned_op,
 	                              uint32_t endian_flip,
 	                              const InstructionInfo &last_info);
 
 	static void jit_begin_call(jit_state_t *_jit);
-	static void jit_end_call(jit_state_t *_jit, jit_pointer_t ptr);
+	static void jit_end_call(jit_state_t *_jit, Func ptr);
 	void jit_save_illegal_cond_branch_taken(jit_state_t *_jit);
 	static void jit_restore_illegal_cond_branch_taken(jit_state_t *_jit, unsigned reg);
 	static void jit_clear_illegal_cond_branch_taken(jit_state_t *_jit, unsigned tmp_reg);

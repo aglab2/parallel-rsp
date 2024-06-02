@@ -21,7 +21,7 @@ if(ENABLE_IPO AND (CMAKE_BUILD_TYPE STREQUAL "Release"))
 endif()
 
 if (CMAKE_COMPILER_IS_GNUCXX OR (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang"))
-    set(PARALLEL_RSP_CXX_FLAGS -Wall -Wextra -Wno-missing-field-initializers -Wno-empty-body -ffast-math -Wno-unused-parameter r -msse2)
+    set(PARALLEL_RSP_CXX_FLAGS -Wall -Wextra -Wno-missing-field-initializers -Wno-empty-body -ffast-math -Wno-unused-parameter -msse2)
 elseif (MSVC)
     set(PARALLEL_RSP_CXX_FLAGS /D_CRT_SECURE_NO_WARNINGS /wd4267 /wd4244 /wd4309 /wd4005 /MP /DNOMINMAX)
 endif()
@@ -29,6 +29,8 @@ endif()
 add_library(parallel-rsp SHARED
 		parallel.cpp
 		jit_allocator.cpp
+		jit_allocator.hpp
+		jit_decl.h
 		rsp/vfunctions.cpp
 		rsp_jit.cpp rsp_jit.hpp
 		rsp_disasm.cpp rsp_disasm.hpp
@@ -94,7 +96,6 @@ if (PARALLEL_RSP_BAKED_LIGHTNING)
 endif()
 
 target_link_libraries(parallel-rsp PUBLIC lightning)
-target_link_options(parallel-rsp PRIVATE -static)
 if (MSVC)
 	set_target_properties(parallel-rsp
 		PROPERTIES

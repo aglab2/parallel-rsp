@@ -126,6 +126,7 @@ extern "C"
 	EXPORT void CALL RomClosed(void)
 	{
 		*RSP::rsp.SP_PC_REG = 0x00000000;
+		delete RSP::cpu;
 	}
 
 	EXPORT void CALL InitiateRSP(RSP_INFO Rsp_Info, unsigned int *CycleCount)
@@ -176,7 +177,6 @@ extern "C"
 
 	EXPORT void CALL CloseDLL(void)
 	{
-		delete RSP::cpu;
 	}
 
 	EXPORT void CALL DllConfig(int hWnd)

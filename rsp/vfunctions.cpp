@@ -35,7 +35,7 @@ extern "C"
 	//
 	// VABS
 	//
-	void RSP_VABS(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VABS(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VABS);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -48,7 +48,7 @@ extern "C"
 	//
 	// VADD
 	//
-	void RSP_VADD(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VADD(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VADD);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -66,7 +66,7 @@ extern "C"
 	//
 	// VADDC
 	//
-	void RSP_VADDC(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VADDC(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VADDC);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -83,7 +83,7 @@ extern "C"
 	// VAND
 	// VNAND
 	//
-	void RSP_VAND(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VAND(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VAND);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -92,7 +92,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VNAND(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VNAND(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VNAND);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -104,7 +104,7 @@ extern "C"
 	//
 	// VCH
 	//
-	void RSP_VCH(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VCH(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VCH);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -124,7 +124,7 @@ extern "C"
 	//
 	// VCL
 	//
-	void RSP_VCL(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VCL(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VCL);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -150,7 +150,7 @@ extern "C"
 	//
 	// VCR
 	//
-	void RSP_VCR(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VCR(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VCR);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -178,7 +178,7 @@ extern "C"
 	// VLT
 	// VNE
 	//
-	void RSP_VEQ(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VEQ(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VEQ);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -197,7 +197,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VGE(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VGE(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VGE);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -216,7 +216,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VLT(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VLT(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VLT);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -235,7 +235,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VNE(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VNE(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VNE);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -261,7 +261,7 @@ extern "C"
 	//
 	// VINVALID
 	//
-	void RSP_VINVALID(RSP::CPUState *, unsigned, unsigned, unsigned, unsigned)
+	void JIT_DECL RSP_VINVALID(RSP::CPUState *, unsigned, unsigned, unsigned, unsigned)
 	{
 		fprintf(stderr, "Unimplemented ...\n");
 	}
@@ -270,7 +270,7 @@ extern "C"
 	// VMACF
 	// VMACU
 	//
-	void RSP_VMACF(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VMACF(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VMACF);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -287,7 +287,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VMACU(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VMACU(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VMACU);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -304,7 +304,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VMACQ(RSP::CPUState *rsp, unsigned vd, unsigned, unsigned, unsigned)
+	void JIT_DECL RSP_VMACQ(RSP::CPUState *rsp, unsigned vd, unsigned, unsigned, unsigned)
 	{
 		TRACE_VU(VMACQ);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -327,7 +327,7 @@ extern "C"
 	// VMADH
 	// VMUDH
 	//
-	void RSP_VMADH(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VMADH(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VMADH);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -345,7 +345,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VMUDH(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VMUDH(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VMUDH);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -367,7 +367,7 @@ extern "C"
 	// VMADL
 	// VMUDL
 	//
-	void RSP_VMADL(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VMADL(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VMADL);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -385,7 +385,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VMUDL(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VMUDL(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VMUDL);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -407,7 +407,7 @@ extern "C"
 	// VMADM
 	// VMUDM
 	//
-	void RSP_VMADM(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VMADM(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VMADM);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -425,7 +425,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VMUDM(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VMUDM(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VMUDM);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -447,7 +447,7 @@ extern "C"
 	// VMADN
 	// VMUDN
 	//
-	void RSP_VMADN(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VMADN(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VMADN);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -465,7 +465,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VMUDN(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VMUDN(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VMUDN);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -486,7 +486,7 @@ extern "C"
 	//
 	// VMOV
 	//
-	void RSP_VMOV(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VMOV(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VMOV);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -498,7 +498,7 @@ extern "C"
 	//
 	// VMRG
 	//
-	void RSP_VMRG(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VMRG(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VMRG);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -517,7 +517,7 @@ extern "C"
 	// VMULQ
 	// VMULU
 	//
-	void RSP_VMULF(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VMULF(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VMULF);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -531,7 +531,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VMULQ(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VMULQ(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VMULQ);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -553,7 +553,7 @@ extern "C"
 		}
 	}
 
-	void RSP_VMULU(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VMULU(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VMULU);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -601,13 +601,13 @@ extern "C"
 		}
 	}
 
-	void RSP_VRNDN(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VRNDN(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(RSP_VRNDN);
 		RSP_VRND(rsp, vd, vs, vt, e, 0);
 	}
 
-	void RSP_VRNDP(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VRNDP(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(RSP_VRNDP);
 		RSP_VRND(rsp, vd, vs, vt, e, 1);
@@ -616,7 +616,7 @@ extern "C"
 	//
 	// VNOP
 	//
-	void RSP_VNOP(RSP::CPUState *, unsigned, unsigned, unsigned, unsigned)
+	void JIT_DECL RSP_VNOP(RSP::CPUState *, unsigned, unsigned, unsigned, unsigned)
 	{
 	}
 
@@ -624,7 +624,7 @@ extern "C"
 	// VOR
 	// VNOR
 	//
-	void RSP_VOR(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VOR(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VOR);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -635,7 +635,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VNOR(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VNOR(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VNOR);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -652,7 +652,7 @@ extern "C"
 	// VRSQ
 	// VRSQL
 	//
-	void RSP_VRCP(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VRCP(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VRCP);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -665,7 +665,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VRCPL(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VRCPL(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VRCPL);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -680,7 +680,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VRSQ(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VRSQ(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VRSQ);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -693,7 +693,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VRSQL(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VRSQL(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VRSQL);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -712,7 +712,7 @@ extern "C"
 	// VRCPH
 	// VRSQH
 	//
-	void RSP_VRCPH(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VRCPH(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VRCPH);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -727,7 +727,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VRSQH(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VRSQH(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VRSQH);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -745,7 +745,7 @@ extern "C"
 	//
 	// VSAR
 	//
-	void RSP_VSAR(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VSAR(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VSAR);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -773,7 +773,7 @@ extern "C"
 	//
 	// VSUB
 	//
-	void RSP_VSUB(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VSUB(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VSUB);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -792,7 +792,7 @@ extern "C"
 	//
 	// VSUBC
 	//
-	void RSP_VSUBC(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VSUBC(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VSUBC);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -810,7 +810,7 @@ extern "C"
 	// VXOR
 	// VNXOR
 	//
-	void RSP_VXOR(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VXOR(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VXOR);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -821,7 +821,7 @@ extern "C"
 		STORE_RESULT();
 	}
 
-	void RSP_VNXOR(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_VNXOR(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		TRACE_VU(VXNOR);
 		uint16_t *acc = rsp->cp2.acc.e;
@@ -833,7 +833,7 @@ extern "C"
 	}
 
 	// RESERVED
-	void RSP_RESERVED(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+	void JIT_DECL RSP_RESERVED(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	{
 		uint16_t *acc = rsp->cp2.acc.e;
 		rsp_vect_t result = _mm_add_epi16(LOAD_VS(), LOAD_VT());
