@@ -20,11 +20,15 @@
 #ifndef _lightning_h
 #define _lightning_h
 
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#ifndef WIN32
 #include <pthread.h>
+#endif
 
 #if defined(__hpux) && defined(__hppa__)
 #  include <machine/param.h>

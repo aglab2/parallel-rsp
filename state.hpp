@@ -114,7 +114,7 @@ struct alignas(64) CP2
 	int8_t dp_flag;
 };
 
-struct CPUState
+struct alignas(64) CPUState
 {
 	uint32_t pc = 0;
 	uint32_t dirty_blocks = 0;

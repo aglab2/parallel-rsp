@@ -424,12 +424,21 @@ void CPU::init_jit_thunks()
 	jit_retr(JIT_REGISTER_MODE);
 
 	jit_realize();
+	jit_word_t data_size, note_size;
+	jit_get_data(&data_size, &note_size);
 	jit_word_t code_size;
 	jit_get_code(&code_size);
+	// it is just how it is
+	code_size += 144;
+	void *thunk_data = allocator.allocate_data(data_size + note_size);
+	if (!thunk_data)
+		abort();
+
 	void *thunk_code = allocator.allocate_code(code_size);
 	if (!thunk_code)
 		abort();
 	jit_set_code(thunk_code, code_size);
+	jit_set_data(thunk_data, data_size + note_size, 0 /*flags*/);
 
 	thunks.enter_frame = reinterpret_cast<int (*)(void *)>(jit_emit());
 	thunks.enter_thunk = jit_address(entry_label);
@@ -441,7 +450,7 @@ void CPU::init_jit_thunks()
 	//printf(" === END DISASM ===\n");
 	jit_destroy_state();
 
-	if (!Allocator::commit_code(thunk_code, code_size))
+	if (!Allocator::commit(thunk_code, code_size, thunk_data, data_size + note_size))
 		abort();
 }
 
@@ -1894,12 +1903,19 @@ Func CPU::jit_region(uint64_t hash, unsigned pc_word, unsigned instruction_count
 		jit_patch_at(b.node, branch_targets[b.local_index]);
 
 	jit_realize();
+	jit_word_t data_size, note_size;
+	jit_get_data(&data_size, &note_size);
 	jit_word_t code_size;
 	jit_get_code(&code_size);
-	auto *block_code = allocator.allocate_code(code_size);
+	void *block_data = allocator.allocate_data(data_size + note_size);
+	if (!block_data)
+		abort();
+
+	void *block_code = allocator.allocate_code(code_size);
 	if (!block_code)
 		abort();
 	jit_set_code(block_code, code_size);
+	jit_set_data(block_data, data_size + note_size, 0 /*flags*/);
 
 	auto ret = reinterpret_cast<Func>(jit_emit());
 
@@ -1912,7 +1928,7 @@ Func CPU::jit_region(uint64_t hash, unsigned pc_word, unsigned instruction_count
 	jit_clear_state();
 	jit_destroy_state();
 
-	if (!Allocator::commit_code(block_code, code_size))
+	if (!Allocator::commit(block_code, code_size, block_data, data_size + note_size))
 		abort();
 	return ret;
 }

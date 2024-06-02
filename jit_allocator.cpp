@@ -37,10 +37,14 @@ static constexpr size_t block_size = huge_va ? (1024 * 1024 * 1024) : (2 * 1024 
 Allocator::~Allocator()
 {
 #ifdef _WIN32
-	for (auto &block : blocks)
+	for (auto &block : code_blocks)
+		VirtualFree(block.code, 0, MEM_RELEASE);
+	for (auto &block : data_blocks)
 		VirtualFree(block.code, 0, MEM_RELEASE);
 #else
-	for (auto &block : blocks)
+	for (auto &block : code_blocks)
+		munmap(block.code, block.size);
+	for (auto &block : data_blocks)
 		munmap(block.code, block.size);
 #endif
 }
@@ -69,12 +73,35 @@ static bool commit_execute(void *ptr, size_t size)
 #endif
 }
 
-bool Allocator::commit_code(void *code, size_t size)
+static bool commit_read_only(void *ptr, size_t size)
 {
-	return commit_execute(code, size);
+#ifdef _WIN32
+	DWORD old_protect;
+	return VirtualProtect(ptr, align_page(size), PAGE_READONLY, &old_protect) != 0;
+#else
+	return mprotect(ptr, size, PROT_READ) == 0;
+#endif
+}
+
+bool Allocator::commit(void *code, size_t code_size, void *data, size_t data_size)
+{
+	bool ok = true;
+	ok = ok ? ok : commit_execute(code, code_size);
+	ok = ok ? ok : commit_read_only(data, data_size);
+	return ok;
 }
 
 void *Allocator::allocate_code(size_t size)
+{
+	return allocate(code_blocks, size);
+}
+
+void *Allocator::allocate_data(size_t size)
+{
+	return allocate(data_blocks, size);
+}
+
+void *Allocator::allocate(std::vector<Block>& blocks, size_t size)
 {
 	size = align_page(size);
 	if (blocks.empty())

@@ -20,10 +20,14 @@
 #include <lightning.h>
 #include <lightning/jit_private.h>
 
-#define HAVE_MMAP 1
+//#define HAVE_MMAP 1
+#undef HAVE_MMAP
 
 #if HAVE_MMAP
 #  include <sys/mman.h>
+#ifdef WIN32
+#define mprotect _mprotect
+#endif
 #endif
 #if defined(__sgi)
 #  include <fcntl.h>

@@ -1,8 +1,7 @@
 #include "../state.hpp"
 
 #ifdef PARALLEL_INTEGRATION
-#include "../rsp_1.1.h"
-#include "m64p_plugin.h"
+#include "../Zilmar_Rsp.h"
 namespace RSP
 {
 extern RSP_INFO rsp;
@@ -11,7 +10,9 @@ extern short semaphore_count[32];
 extern int SP_STATUS_TIMEOUT;
 extern int SP_SEMAPHORE_TIMEOUT;
 } // namespace RSP
+#ifdef PARALLEL_INTEGRATION_EX
 extern uint32_t m64p_rsp_yielded_on_semaphore;
+#endif
 #endif
 
 using namespace RSP;
@@ -47,7 +48,7 @@ extern "C"
 		{
 			if (*rsp->cp0.cr[CP0_REGISTER_SP_SEMAPHORE])
 			{
-#ifdef PARALLEL_INTEGRATION
+#ifdef PARALLEL_INTEGRATION_EX
 				if (++RSP::semaphore_count[rt] >= RSP::SP_SEMAPHORE_TIMEOUT)
 				{
 					m64p_rsp_yielded_on_semaphore = 1;

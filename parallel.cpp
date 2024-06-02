@@ -5,23 +5,22 @@
 #endif
 #include <stdint.h>
 
-#include "m64p_plugin.h"
-#include "rsp_1.1.h"
+#include "Zilmar_Rsp.h"
 
 #define RSP_PARALLEL_VERSION 0x0101
 #define RSP_PLUGIN_API_VERSION 0x020000
 
-#ifdef PARALLEL_INTEGRATION
-extern uint32_t m64p_rsp_yielded_on_semaphore;
+#ifdef PARALLEL_INTEGRATION_EX
+uint32_t m64p_rsp_yielded_on_semaphore;
 #endif
 
 namespace RSP
 {
 RSP_INFO rsp;
 #ifdef DEBUG_JIT
-RSP::CPU cpu;
+RSP::CPU* cpu;
 #else
-RSP::JIT::CPU cpu;
+RSP::JIT::CPU* cpu;
 #endif
 short MFC0_count[32];
 short semaphore_count[32];
@@ -34,8 +33,8 @@ extern "C"
 	// Hack entry point to use when loading savestates when we're tracing.
 	void rsp_clear_registers()
 	{
-		memset(RSP::cpu.get_state().sr, 0, sizeof(uint32_t) * 32);
-		memset(&RSP::cpu.get_state().cp2, 0, sizeof(RSP::cpu.get_state().cp2));
+		memset(RSP::cpu->get_state().sr, 0, sizeof(uint32_t) * 32);
+		memset(&RSP::cpu->get_state().cp2, 0, sizeof(RSP::cpu->get_state().cp2));
 	}
 
 #ifdef INTENSE_DEBUG
@@ -56,20 +55,20 @@ extern "C"
 	}
 #endif
 
-	EXPORT unsigned int CALL parallelRSPDoRspCycles(unsigned int cycles)
+	EXPORT unsigned int CALL DoRspCycles(unsigned int cycles)
 	{
-#ifdef PARALLEL_INTEGRATION
+#ifdef PARALLEL_INTEGRATION_EX
 		m64p_rsp_yielded_on_semaphore = 0;
 #endif
-		
+
 		if (*RSP::rsp.SP_STATUS_REG & SP_STATUS_HALT)
 			return 0;
 
 		// We don't know if Mupen from the outside invalidated our IMEM.
-		RSP::cpu.invalidate_imem();
+		RSP::cpu->invalidate_imem();
 
 		// Run CPU until we either break or we need to fire an IRQ.
-		RSP::cpu.get_state().pc = *RSP::rsp.SP_PC_REG & 0xfff;
+		RSP::cpu->get_state().pc = *RSP::rsp.SP_PC_REG & 0xfff;
 
 #ifdef INTENSE_DEBUG
 		fprintf(stderr, "RUN TASK: %u\n", RSP::cpu.get_state().pc);
@@ -84,17 +83,17 @@ extern "C"
 
 		while (!(*RSP::rsp.SP_STATUS_REG & SP_STATUS_HALT))
 		{
-			auto mode = RSP::cpu.run();
-			if (mode == RSP::MODE_CHECK_FLAGS && (*RSP::cpu.get_state().cp0.irq & 1))
+			auto mode = RSP::cpu->run();
+			if (mode == RSP::MODE_CHECK_FLAGS && (*RSP::cpu->get_state().cp0.irq & 1))
 				break;
-#ifdef PARALLEL_INTEGRATION
+#ifdef PARALLEL_INTEGRATION_EX
 			if (m64p_rsp_yielded_on_semaphore)
 				break;
 #endif
 		}
 
-		*RSP::rsp.SP_PC_REG = 0x04001000 | (RSP::cpu.get_state().pc & 0xffc);
-#ifdef PARALLEL_INTEGRATION
+		*RSP::rsp.SP_PC_REG = 0x04001000 | (RSP::cpu->get_state().pc & 0xffc);
+#ifdef PARALLEL_INTEGRATION_EX
 		if (m64p_rsp_yielded_on_semaphore)
 			return cycles;
 #endif
@@ -102,7 +101,7 @@ extern "C"
 		// From CXD4.
 		if (*RSP::rsp.SP_STATUS_REG & SP_STATUS_BROKE)
 			return cycles;
-		else if (*RSP::cpu.get_state().cp0.irq & 1)
+		else if (*RSP::cpu->get_state().cp0.irq & 1)
 			RSP::rsp.CheckInterrupts();
 		else if (*RSP::rsp.SP_STATUS_REG & SP_STATUS_HALT)
 			return cycles;
@@ -115,32 +114,27 @@ extern "C"
 		return cycles;
 	}
 
-	EXPORT m64p_error CALL parallelRSPPluginGetVersion(m64p_plugin_type *PluginType, int *PluginVersion,
-	                                                   int *APIVersion, const char **PluginNamePtr, int *Capabilities)
+	EXPORT void CALL GetDllInfo(PLUGIN_INFO * PluginInfo)
 	{
-		/* set version info */
-		if (PluginType != NULL)
-			*PluginType = M64PLUGIN_RSP;
-
-		if (PluginVersion != NULL)
-			*PluginVersion = RSP_PARALLEL_VERSION;
-
-		if (APIVersion != NULL)
-			*APIVersion = RSP_PLUGIN_API_VERSION;
-
-		if (Capabilities != NULL)
-			*Capabilities = 0;
-
-		return M64ERR_SUCCESS;
+		PluginInfo->Version = 0x0101;
+		PluginInfo->Type = PLUGIN_TYPE_RSP;
+		strcpy(PluginInfo->Name, "ParaLLel Launcher RSP Plugin");
+		PluginInfo->NormalMemory = 1;
+		PluginInfo->MemoryBswaped = 1;
 	}
 
-	EXPORT void CALL parallelRSPRomClosed(void)
+	EXPORT void CALL RomClosed(void)
 	{
 		*RSP::rsp.SP_PC_REG = 0x00000000;
 	}
 
-	EXPORT void CALL parallelRSPInitiateRSP(RSP_INFO Rsp_Info, unsigned int *CycleCount)
+	EXPORT void CALL InitiateRSP(RSP_INFO Rsp_Info, unsigned int *CycleCount)
 	{
+#ifdef DEBUG_JIT
+		RSP::cpu = new (std::align_val_t(64)) RSP::CPU();
+#else
+		RSP::cpu = new (std::align_val_t(64)) RSP::JIT::CPU();
+#endif
 		if (CycleCount)
 			*CycleCount = 0;
 
@@ -150,7 +144,7 @@ extern "C"
 		RSP::rsp = Rsp_Info;
 		*RSP::rsp.SP_PC_REG = 0x04001000 & 0x00000FFF; /* task init bug on Mupen64 */
 
-		auto **cr = RSP::cpu.get_state().cp0.cr;
+		auto **cr = RSP::cpu->get_state().cp0.cr;
 		cr[0x0] = RSP::rsp.SP_MEM_ADDR_REG;
 		cr[0x1] = RSP::rsp.SP_DRAM_ADDR_REG;
 		cr[0x2] = RSP::rsp.SP_RD_LEN_REG;
@@ -169,14 +163,23 @@ extern "C"
 		cr[0xF] = RSP::rsp.DPC_TMEM_REG;
 
 		*cr[RSP::CP0_REGISTER_SP_STATUS] = SP_STATUS_HALT;
-		RSP::cpu.get_state().cp0.irq = RSP::rsp.MI_INTR_REG;
+		RSP::cpu->get_state().cp0.irq = RSP::rsp.MI_INTR_REG;
 
 		// From CXD4.
 		RSP::SP_STATUS_TIMEOUT = 0x7fff;
 		RSP::SP_SEMAPHORE_TIMEOUT = 4;
 
-		RSP::cpu.set_dmem(reinterpret_cast<uint32_t *>(Rsp_Info.DMEM));
-		RSP::cpu.set_imem(reinterpret_cast<uint32_t *>(Rsp_Info.IMEM));
-		RSP::cpu.set_rdram(reinterpret_cast<uint32_t *>(Rsp_Info.RDRAM));
+		RSP::cpu->set_dmem(reinterpret_cast<uint32_t *>(Rsp_Info.DMEM));
+		RSP::cpu->set_imem(reinterpret_cast<uint32_t *>(Rsp_Info.IMEM));
+		RSP::cpu->set_rdram(reinterpret_cast<uint32_t *>(Rsp_Info.RDRAM));
+	}
+
+	EXPORT void CALL CloseDLL(void)
+	{
+		delete RSP::cpu;
+	}
+
+	EXPORT void CALL DllConfig(int hWnd)
+	{
 	}
 }
