@@ -10,6 +10,7 @@ extern short MFC0_count[32];
 extern short semaphore_count[32];
 extern int SP_STATUS_TIMEOUT;
 extern int SP_SEMAPHORE_TIMEOUT;
+extern bool graphics_hle;
 } // namespace RSP
 #ifdef PARALLEL_INTEGRATION_EX
 extern uint32_t m64p_rsp_yielded_on_semaphore;
@@ -47,18 +48,27 @@ extern "C"
 
 		if (rd == CP0_REGISTER_SP_SEMAPHORE)
 		{
-			if (*rsp->cp0.cr[CP0_REGISTER_SP_SEMAPHORE])
+#ifdef PARALLEL_INTEGRATION
+			if (graphics_hle)
 			{
-#ifdef PARALLEL_INTEGRATION_EX
-				if (++RSP::semaphore_count[rt] >= RSP::SP_SEMAPHORE_TIMEOUT)
-				{
-					m64p_rsp_yielded_on_semaphore = 1;
-					return MODE_CHECK_FLAGS;
-				}
-#endif
+				rsp->sr[rt] = 0;
 			}
 			else
-				*rsp->cp0.cr[CP0_REGISTER_SP_SEMAPHORE] = 1;
+#endif
+			{
+				if (*rsp->cp0.cr[CP0_REGISTER_SP_SEMAPHORE])
+				{
+	#ifdef PARALLEL_INTEGRATION_EX
+					if (++RSP::semaphore_count[rt] >= RSP::SP_SEMAPHORE_TIMEOUT)
+					{
+						m64p_rsp_yielded_on_semaphore = 1;
+						return MODE_CHECK_FLAGS;
+					}
+	#endif
+				}
+				else
+					*rsp->cp0.cr[CP0_REGISTER_SP_SEMAPHORE] = 1;
+			}
 		}
 
 		//if (rd == 4) // SP_STATUS_REG

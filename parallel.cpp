@@ -26,6 +26,74 @@ short MFC0_count[32];
 short semaphore_count[32];
 int SP_STATUS_TIMEOUT;
 int SP_SEMAPHORE_TIMEOUT;
+bool graphics_hle = false;
+
+namespace Zilmar
+{
+	short Set_GraphicsHle = 0;
+	enum SettingLocation
+	{
+		SettingType_ConstString = 0,
+		SettingType_ConstValue = 1,
+		SettingType_CfgFile = 2,
+		SettingType_Registry = 3,
+		SettingType_RelativePath = 4,
+		TemporarySetting = 5,
+		SettingType_RomDatabase = 6,
+		SettingType_CheatSetting = 7,
+		SettingType_GameSetting = 8,
+		SettingType_BoolVariable = 9,
+		SettingType_NumberVariable = 10,
+		SettingType_StringVariable = 11,
+		SettingType_SelectedDirectory = 12,
+		SettingType_RdbSetting = 13,
+	};
+
+	enum SettingDataType
+	{
+		Data_DWORD = 0, Data_String = 1, Data_CPUTYPE = 2, Data_SelfMod = 3, Data_OnOff = 4, Data_YesNo = 5, Data_SaveChip = 6
+	};
+
+	typedef struct
+	{
+		uint32_t dwSize;
+		int DefaultStartRange;
+		int SettingStartRange;
+		int MaximumSettings;
+		int NoDefault;
+		int DefaultLocation;
+		void * handle;
+
+		unsigned int(CALL *GetSetting)      (void * handle, int ID);
+		const char * (CALL *GetSettingSz)    (void * handle, int ID, char * Buffer, int BufferLen);
+		void(CALL *SetSetting)      (void * handle, int ID, unsigned int Value);
+		void(CALL *SetSettingSz)    (void * handle, int ID, const char * Value);
+		void(CALL *RegisterSetting) (void * handle, int ID, int DefaultID, SettingDataType Type,
+			SettingLocation Location, const char * Category, const char * DefaultStr, uint32_t Value);
+		void(CALL *UseUnregisteredSetting) (int ID);
+	} PLUGIN_SETTINGS;
+
+	typedef struct
+	{
+		unsigned int(CALL *FindSystemSettingId) (void * handle, const char * Name);
+	} PLUGIN_SETTINGS2;
+
+	static PLUGIN_SETTINGS  g_PluginSettings;
+	static PLUGIN_SETTINGS2 g_PluginSettings2;
+	static inline unsigned int GetSystemSetting(short SettingID)
+	{
+		return g_PluginSettings.GetSetting(g_PluginSettings.handle, SettingID);
+	}
+	
+	static inline short FindSystemSettingId(const char * Name)
+	{
+		if (g_PluginSettings2.FindSystemSettingId && g_PluginSettings.handle)
+		{
+			return (short)g_PluginSettings2.FindSystemSettingId(g_PluginSettings.handle, Name);
+		}
+		return 0;
+	}
+}
 } // namespace RSP
 
 extern "C"
@@ -60,6 +128,24 @@ extern "C"
 #ifdef PARALLEL_INTEGRATION_EX
 		m64p_rsp_yielded_on_semaphore = 0;
 #endif
+
+		uint32_t TaskType = *(uint32_t*)(RSP::rsp.DMEM + 0xFC0);
+		if (TaskType == 1 && RSP::graphics_hle && *(uint32_t*)(RSP::rsp.DMEM + 0x0ff0) != 0)
+		{
+			if (RSP::rsp.ProcessDlist)
+			{
+				RSP::rsp.ProcessDlist();
+			}
+			*RSP::rsp.SP_STATUS_REG |= (0x0203 );
+			if ((*RSP::rsp.SP_STATUS_REG & SP_STATUS_INTR_BREAK) != 0 )
+			{
+				*RSP::rsp.MI_INTR_REG |= 1;
+				RSP::rsp.CheckInterrupts();
+			}
+
+			*RSP::rsp.DPC_STATUS_REG &= ~0x0002;
+			return cycles;
+		}
 
 		if (*RSP::rsp.SP_STATUS_REG & SP_STATUS_HALT)
 			return 0;
@@ -128,9 +214,26 @@ extern "C"
 		*RSP::rsp.SP_PC_REG = 0x00000000;
 		delete RSP::cpu;
 	}
+	
+	EXPORT void CALL SetSettingInfo(RSP::Zilmar::PLUGIN_SETTINGS * info)
+	{
+		RSP::Zilmar::g_PluginSettings = *info;
+	}
+
+	EXPORT void CALL SetSettingInfo2(RSP::Zilmar::PLUGIN_SETTINGS2 * info)
+	{
+		RSP::Zilmar::g_PluginSettings2 = *info;
+	}
+	
+	EXPORT void CALL PluginLoaded(void)
+	{
+		RSP::Zilmar::Set_GraphicsHle = RSP::Zilmar::FindSystemSettingId("HLE GFX");
+	}
 
 	EXPORT void CALL InitiateRSP(RSP_INFO Rsp_Info, unsigned int *CycleCount)
 	{
+		RSP::graphics_hle = RSP::Zilmar::GetSystemSetting(RSP::Zilmar::Set_GraphicsHle);
+
 #ifdef DEBUG_JIT
 		RSP::cpu = new (std::align_val_t(64)) RSP::CPU();
 #else
