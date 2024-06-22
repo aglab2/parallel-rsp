@@ -47,6 +47,32 @@ extern "C"
 	DECL_LS(SWV);
 	DECL_LS(STV);
 
+#undef DECL_LS
+
+#define DECL_LS0(op) void JIT_DECL RSP_##op##0(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base)
+	DECL_LS0(LLV);
+	DECL_LS0(LDV);
+	DECL_LS0(LQV);
+	DECL_LS0(LRV);
+	DECL_LS0(LPV);
+	DECL_LS0(LUV);
+	DECL_LS0(LHV);
+	DECL_LS0(LFV);
+	DECL_LS0(LWV);
+	DECL_LS0(LTV);
+
+	DECL_LS0(SLV);
+	DECL_LS0(SDV);
+	DECL_LS0(SQV);
+	DECL_LS0(SRV);
+	DECL_LS0(SPV);
+	DECL_LS0(SUV);
+	DECL_LS0(SHV);
+	DECL_LS0(SFV);
+	DECL_LS0(SWV);
+	DECL_LS0(STV);
+#undef DECL_LS
+
 #define DECL_COP2(op) void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	DECL_COP2(VMULF);
 	DECL_COP2(VMULU);
@@ -93,6 +119,7 @@ extern "C"
 	DECL_COP2(VRSQH);
 	DECL_COP2(VNOP);
 	DECL_COP2(RESERVED);
+#undef DECL_COP2
 }
 
 #endif

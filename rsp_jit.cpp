@@ -1651,7 +1651,26 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			RSP_LBV, RSP_LSV, RSP_LLV, RSP_LDV, RSP_LQV, RSP_LRV, RSP_LPV, RSP_LUV, RSP_LHV, RSP_LFV, nullptr, RSP_LTV,
 		};
 
-		auto *op = ops[rd];
+		using LWC2Op0 = void(JIT_DECL *)(RSP::CPUState *, unsigned rt, int simm, unsigned rs);
+		static const LWC2Op0 ops0[32] = {
+			nullptr, nullptr, RSP_LLV0, RSP_LDV0, RSP_LQV0, RSP_LRV0, RSP_LPV0, RSP_LUV0, RSP_LHV0, RSP_LFV0, nullptr, RSP_LTV0,
+		};
+
+		auto *op0 = 0 == imm ? ops0[rd] : nullptr;
+		if (op0)
+		{
+			regs.flush_caller_save_registers(_jit);
+			regs.flush_mips_register(_jit, rs);
+			jit_begin_call(_jit);
+			jit_pushargr(JIT_REGISTER_STATE);
+			jit_pushargi(rt);
+			jit_pushargi(simm);
+			jit_pushargi(rs);
+			jit_end_call(_jit, reinterpret_cast<Func>(op0));
+		}
+
+		// If op0 exists, op should be nullptr because it was already handled
+		auto *op = op0 ? nullptr : ops[rd];
 		if (op)
 		{
 			regs.flush_caller_save_registers(_jit);
@@ -1678,12 +1697,30 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		unsigned rd = (instr >> 11) & 31;
 		unsigned imm = (instr >> 7) & 15;
 
-		using SWC2Op = void (JIT_DECL *)(RSP::CPUState *, unsigned rt, unsigned imm, int simm, unsigned rs);
+		using SWC2Op = void(JIT_DECL *)(RSP::CPUState *, unsigned rt, unsigned imm, int simm, unsigned rs);
 		static const SWC2Op ops[32] = {
 			RSP_SBV, RSP_SSV, RSP_SLV, RSP_SDV, RSP_SQV, RSP_SRV, RSP_SPV, RSP_SUV, RSP_SHV, RSP_SFV, RSP_SWV, RSP_STV,
 		};
 
-		auto *op = ops[rd];
+		using SWC2Op0 = void(JIT_DECL *)(RSP::CPUState *, unsigned rt, int simm, unsigned rs);
+		static const SWC2Op0 ops0[32] = {
+			nullptr, nullptr, RSP_SLV0, RSP_SDV0, RSP_SQV0, RSP_SRV0, RSP_SPV0, RSP_SUV0, RSP_SHV0, RSP_SFV0, RSP_SWV0, RSP_STV0,
+		};
+
+		auto *op0 = 0 == imm ? ops0[rd] : nullptr;
+		if (op0)
+		{
+			regs.flush_caller_save_registers(_jit);
+			regs.flush_mips_register(_jit, rs);
+			jit_begin_call(_jit);
+			jit_pushargr(JIT_REGISTER_STATE);
+			jit_pushargi(rt);
+			jit_pushargi(simm);
+			jit_pushargi(rs);
+			jit_end_call(_jit, reinterpret_cast<Func>(op0));
+		}
+
+		auto *op = op0 ? nullptr : ops[rd];
 		if (op)
 		{
 			regs.flush_caller_save_registers(_jit);
@@ -1696,6 +1733,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			jit_pushargi(rs);
 			jit_end_call(_jit, reinterpret_cast<Func>(op));
 		}
+
 		break;
 	}
 
