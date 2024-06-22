@@ -70,7 +70,7 @@ namespace LS
 	{
 		TRACE_LS(LSV);
 		unsigned addr = rsp->sr[base] + offset * 2;
-		const unsigned end = (e > 14) ? 16 : (e + 2);
+	    const unsigned end = (e > 14) ? 16 : (e + 2);
 		for (unsigned i = e; i < end; i++)
 			WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
 	}
@@ -96,7 +96,7 @@ namespace LS
 	{
 		TRACE_LS(LLV);
 		unsigned addr = rsp->sr[base] + offset * 4;
-		const unsigned end = (e > 12) ? 16 : (e + 4);
+	    const unsigned end = (e > 12) ? 16 : (e + 4);
 		for (unsigned i = e; i < end; i++)
 			WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
 	}
@@ -136,8 +136,8 @@ namespace LS
 #endif
 
 		// Handle illegal scenario.
-		if ((e > 8) || (e & 1) || (addr & 1))
-		{
+		if (__builtin_expect((e > 8) || (e & 1) || (addr & 1), false))
+	    {
 			for (unsigned i = 0; i < 8; i++)
 			{
 				WRITE_MEM_U8(rsp->dmem, (addr + i) & 0xfff,
@@ -147,7 +147,7 @@ namespace LS
 		else
 		{
 		    unsigned _e = e;
-			_e >>= 1;
+		    _e >>= 1;
 			for (unsigned i = 0; i < 4; i++)
 			{
 				WRITE_MEM_U16(rsp->dmem, (addr + 2 * i) & 0xfff, rsp->cp2.regs[rt].e[_e + i]);
@@ -228,7 +228,7 @@ namespace LS
 		const unsigned index = addr & 7;
 		addr &= ~7;
 
-		const auto& reg = rsp->cp2.regs[rt];
+		const auto &reg = rsp->cp2.regs[rt];
 		for (unsigned i = 0; i < 8; i++)
 		{
 			const unsigned b = e + (i << 1);
@@ -307,7 +307,7 @@ namespace LS
 	IMPL_LS(LWV)
 	{
 		TRACE_LS(LWV);
-		unsigned addr = rsp->sr[base] + offset * 16;
+	    unsigned addr = rsp->sr[base] + offset * 16;
 		for (unsigned i = 16 - e; i < 16 + e; i++)
 		{
 			WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr & 0xfff));
@@ -330,45 +330,89 @@ namespace LS
 	IMPL_LS(LQV)
 	{
 		TRACE_LS(LQV);
-		unsigned addr = rsp->sr[base] + offset * 16;
-		unsigned end = 16 + e - (addr & 0xf);
-		if (end > 16) end = 16;
+	    unsigned addr = rsp->sr[base] + offset * 16;
+		if (__builtin_expect(0 == (addr & 0xf), true))
+	    {
+		    unsigned end = 16 + e;
+		    if (end > 16)
+			    end = 16;
 
-		for (unsigned i = e; i < end; i++)
-			WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+			#pragma omp simd
+		    for (unsigned i = e; i < end; i++)
+			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+		}
+		else
+	    {
+		    unsigned end = 16 + e - (addr & 0xf);
+		    if (end > 16)
+			    end = 16;
+
+		    for (unsigned i = e; i < end; i++)
+			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+		}
 	}
 
 	IMPL_LS(SQV)
 	{
 		TRACE_LS(SQV);
 		unsigned addr = (rsp->sr[base] + offset * 16) & 0xfff;
-		
-		const unsigned end = e + (16 - (addr & 15));
-		for (unsigned i = e; i < end; i++)
-			WRITE_MEM_U8(rsp->dmem, addr++, READ_VEC_U8(rsp->cp2.regs[rt], i & 15));
+	    if (__builtin_expect(0 == (addr & 0xf), true))
+	    {
+		    unsigned end = e + 16;
+		    for (unsigned i = e; i < end; i++)
+			    WRITE_MEM_U8(rsp->dmem, addr++, READ_VEC_U8(rsp->cp2.regs[rt], i & 15));
+		}
+		else
+	    {
+		    const unsigned end = e + (16 - (addr & 15));
+		    for (unsigned i = e; i < end; i++)
+			    WRITE_MEM_U8(rsp->dmem, addr++, READ_VEC_U8(rsp->cp2.regs[rt], i & 15));
+		}
 	}
 
 	IMPL_LS(LRV)
 	{
 		TRACE_LS(LRV);
 		unsigned addr = rsp->sr[base] + offset * 16;
-		const unsigned start = 16 - ((addr & 0xf) - e);
-		addr &= ~0xf;
 
-		for (unsigned i = start; i < 16; i++)
-			WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+	    if (__builtin_expect(0 == (addr & 0xf), true))
+	    {
+		    constexpr unsigned start = 16 + e;
+		    for (unsigned i = start; i < 16; i++)
+			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+	    }
+		else
+	    {
+		    const unsigned start = 16 - ((addr & 0xf) - e);
+		    addr &= ~0xf;
+
+		    for (unsigned i = start; i < 16; i++)
+			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+		}
 	}
 
 	IMPL_LS(SRV)
 	{
 		TRACE_LS(SRV);
 		unsigned addr = (rsp->sr[base] + offset * 16) & 0xfff;
-		const unsigned end = e + (addr & 0xf);
-		base = 16 - (addr & 0xf);
-		addr &= ~0xf;
 
-		for (unsigned i = e; i < end; i++)
-			WRITE_MEM_U8(rsp->dmem, addr++, READ_VEC_U8(rsp->cp2.regs[rt], i + base & 0xf));
+		if (__builtin_expect(0 == (addr & 0xf), true))
+	    {
+		    constexpr unsigned end = e;
+		    base = 16;
+
+		    for (unsigned i = e; i < end; i++)
+			    WRITE_MEM_U8(rsp->dmem, addr++, READ_VEC_U8(rsp->cp2.regs[rt], i + base & 0xf));
+		}
+		else
+	    {
+		    const unsigned end = e + (addr & 0xf);
+		    base = 16 - (addr & 0xf);
+		    addr &= ~0xf;
+
+		    for (unsigned i = e; i < end; i++)
+			    WRITE_MEM_U8(rsp->dmem, addr++, READ_VEC_U8(rsp->cp2.regs[rt], i + base & 0xf));
+		}
 	}
 
 	IMPL_LS(LTV)
