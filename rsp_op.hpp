@@ -4,6 +4,39 @@
 #include "state.hpp"
 #include "jit_decl.h"
 
+namespace LS
+{
+#define DECL_LS(op)             \
+	template <unsigned e> \
+	void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned rt, int offset, unsigned base)
+
+DECL_LS(LBV);
+DECL_LS(LSV);
+DECL_LS(LLV);
+DECL_LS(LDV);
+DECL_LS(LQV);
+DECL_LS(LRV);
+DECL_LS(LPV);
+DECL_LS(LUV);
+DECL_LS(LHV);
+DECL_LS(LFV);
+DECL_LS(LWV);
+DECL_LS(LTV);
+
+DECL_LS(SBV);
+DECL_LS(SSV);
+DECL_LS(SLV);
+DECL_LS(SDV);
+DECL_LS(SQV);
+DECL_LS(SRV);
+DECL_LS(SPV);
+DECL_LS(SUV);
+DECL_LS(SHV);
+DECL_LS(SFV);
+DECL_LS(SWV);
+DECL_LS(STV);
+}
+
 extern "C"
 {
 	int JIT_DECL RSP_MFC0(RSP::CPUState *rsp, unsigned rt, unsigned rd);
@@ -18,34 +51,6 @@ extern "C"
 	void JIT_DECL RSP_RETURN(void *opaque, unsigned pc);
 	void JIT_DECL RSP_EXIT(void *opaque, int mode);
 	void JIT_DECL RSP_REPORT_PC(void *rsp, unsigned pc, unsigned instr);
-
-#define DECL_LS(op) void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned rt, unsigned element, int offset, unsigned base)
-
-	DECL_LS(LBV);
-	DECL_LS(LSV);
-	DECL_LS(LLV);
-	DECL_LS(LDV);
-	DECL_LS(LQV);
-	DECL_LS(LRV);
-	DECL_LS(LPV);
-	DECL_LS(LUV);
-	DECL_LS(LHV);
-	DECL_LS(LFV);
-	DECL_LS(LWV);
-	DECL_LS(LTV);
-
-	DECL_LS(SBV);
-	DECL_LS(SSV);
-	DECL_LS(SLV);
-	DECL_LS(SDV);
-	DECL_LS(SQV);
-	DECL_LS(SRV);
-	DECL_LS(SPV);
-	DECL_LS(SUV);
-	DECL_LS(SHV);
-	DECL_LS(SFV);
-	DECL_LS(SWV);
-	DECL_LS(STV);
 
 #define DECL_COP2(op) void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
 	DECL_COP2(VMULF);

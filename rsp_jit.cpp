@@ -1646,12 +1646,38 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		unsigned rd = (instr >> 11) & 31;
 		unsigned imm = (instr >> 7) & 15;
 
-		using LWC2Op = void (JIT_DECL *)(RSP::CPUState *, unsigned rt, unsigned imm, int simm, unsigned rs);
-		static const LWC2Op ops[32] = {
-			RSP_LBV, RSP_LSV, RSP_LLV, RSP_LDV, RSP_LQV, RSP_LRV, RSP_LPV, RSP_LUV, RSP_LHV, RSP_LFV, nullptr, RSP_LTV,
-		};
+		using LWC2Op = void (JIT_DECL *)(RSP::CPUState *, unsigned rt, int simm, unsigned rs);
+#define OPS_DECL(e) \
+		static const LWC2Op ops##e[32] = { \
+			LS::RSP_LBV<e>, LS::RSP_LSV<e>, LS::RSP_LLV<e>, LS::RSP_LDV<e> \
+		  , LS::RSP_LQV<e>, LS::RSP_LRV<e>, LS::RSP_LPV<e>, LS::RSP_LUV<e> \
+		  , LS::RSP_LHV<e>, LS::RSP_LFV<e>, nullptr		  , LS::RSP_LTV<e> \
+		}
 
-		auto *op = ops[rd];
+		LWC2Op op = nullptr;
+		switch (imm)
+		{
+#define OPS_CASE(e) case e: { OPS_DECL(e); op = ops##e[rd]; } break
+			OPS_CASE(0);
+			OPS_CASE(1);
+			OPS_CASE(2);
+			OPS_CASE(3);
+			OPS_CASE(4);
+			OPS_CASE(5);
+			OPS_CASE(6);
+			OPS_CASE(7);
+			OPS_CASE(8);
+			OPS_CASE(9);
+			OPS_CASE(10);
+			OPS_CASE(11);
+			OPS_CASE(12);
+			OPS_CASE(13);
+			OPS_CASE(14);
+			OPS_CASE(15);
+#undef OPS_CASE
+		}
+#undef OPS_DECL
+
 		if (op)
 		{
 			regs.flush_caller_save_registers(_jit);
@@ -1659,7 +1685,6 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			jit_begin_call(_jit);
 			jit_pushargr(JIT_REGISTER_STATE);
 			jit_pushargi(rt);
-			jit_pushargi(imm);
 			jit_pushargi(simm);
 			jit_pushargi(rs);
 			jit_end_call(_jit, reinterpret_cast<Func>(op));
@@ -1678,12 +1703,38 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		unsigned rd = (instr >> 11) & 31;
 		unsigned imm = (instr >> 7) & 15;
 
-		using SWC2Op = void (JIT_DECL *)(RSP::CPUState *, unsigned rt, unsigned imm, int simm, unsigned rs);
-		static const SWC2Op ops[32] = {
-			RSP_SBV, RSP_SSV, RSP_SLV, RSP_SDV, RSP_SQV, RSP_SRV, RSP_SPV, RSP_SUV, RSP_SHV, RSP_SFV, RSP_SWV, RSP_STV,
-		};
+		using SWC2Op = void(JIT_DECL *)(RSP::CPUState *, unsigned rt, int simm, unsigned rs);
+#define OPS_DECL(e) \
+		static const SWC2Op ops##e[32] = { \
+			LS::RSP_SBV<e>, LS::RSP_SSV<e>, LS::RSP_SLV<e>, LS::RSP_SDV<e> \
+		  , LS::RSP_SQV<e>, LS::RSP_SRV<e>, LS::RSP_SPV<e>, LS::RSP_SUV<e> \
+		  , LS::RSP_SHV<e>, LS::RSP_SFV<e>, LS::RSP_SWV<e>, LS::RSP_STV<e>, \
+		}
 
-		auto *op = ops[rd];
+		SWC2Op op = nullptr;
+		switch (imm)
+		{
+#define OPS_CASE(e) case e: { OPS_DECL(e); op = ops##e[rd]; } break
+			OPS_CASE(0);
+			OPS_CASE(1);
+			OPS_CASE(2);
+			OPS_CASE(3);
+			OPS_CASE(4);
+			OPS_CASE(5);
+			OPS_CASE(6);
+			OPS_CASE(7);
+			OPS_CASE(8);
+			OPS_CASE(9);
+			OPS_CASE(10);
+			OPS_CASE(11);
+			OPS_CASE(12);
+			OPS_CASE(13);
+			OPS_CASE(14);
+			OPS_CASE(15);
+#undef OPS_CASE
+		}
+#undef OPS_DECL
+
 		if (op)
 		{
 			regs.flush_caller_save_registers(_jit);
@@ -1691,7 +1742,6 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			jit_begin_call(_jit);
 			jit_pushargr(JIT_REGISTER_STATE);
 			jit_pushargi(rt);
-			jit_pushargi(imm);
 			jit_pushargi(simm);
 			jit_pushargi(rs);
 			jit_end_call(_jit, reinterpret_cast<Func>(op));

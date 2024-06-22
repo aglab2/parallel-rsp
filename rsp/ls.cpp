@@ -17,12 +17,34 @@ struct RSPVector
 #define READ_VEC_U8(vec, addr) (reinterpret_cast<const uint8_t *>(vec.e)[MES(addr)])
 #define WRITE_VEC_U8(vec, addr, data) (reinterpret_cast<uint8_t *>(vec.e)[MES(addr)] = data)
 
-extern "C"
+#define IMPL_LS(op) \
+template<unsigned e> \
+void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<0>(RSP::CPUState *rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<1>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<2>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<3>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<4>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<5>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<6>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<7>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<8>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<9>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<10>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<11>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<12>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<13>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<14>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+template void JIT_DECL RSP_##op<15>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+template <unsigned e>                                                                       \
+	void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned rt, int offset, unsigned base)
+
+namespace LS
 {
 	// Using mostly Ares' implementation as a base here
 
 	// Load 8-bit
-	void JIT_DECL RSP_LBV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(LBV)
 	{
 		TRACE_LS(LBV);
 		unsigned addr = (rsp->sr[base] + offset * 1) & 0xfff;
@@ -30,7 +52,7 @@ extern "C"
 	}
 
 	// Store 8-bit
-	void JIT_DECL RSP_SBV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(SBV)
 	{
 		TRACE_LS(SBV);
 		unsigned addr = (rsp->sr[base] + offset * 1) & 0xfff;
@@ -44,7 +66,7 @@ extern "C"
 	}
 
 	// Load 16-bit
-	void JIT_DECL RSP_LSV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+    IMPL_LS(LSV)
 	{
 		TRACE_LS(LSV);
 		unsigned addr = rsp->sr[base] + offset * 2;
@@ -54,7 +76,7 @@ extern "C"
 	}
 
 	// Store 16-bit
-	void JIT_DECL RSP_SSV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(SSV)
 	{
 		TRACE_LS(SSV);
 		unsigned addr = (rsp->sr[base] + offset * 2) & 0xfff;
@@ -70,7 +92,7 @@ extern "C"
 	}
 
 	// Load 32-bit
-	void JIT_DECL RSP_LLV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(LLV)
 	{
 		TRACE_LS(LLV);
 		unsigned addr = rsp->sr[base] + offset * 4;
@@ -80,7 +102,7 @@ extern "C"
 	}
 
 	// Store 32-bit
-	void JIT_DECL RSP_SLV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(SLV)
 	{
 		TRACE_LS(SLV);
 		unsigned addr = (rsp->sr[base] + offset * 4) & 0xfff;
@@ -94,7 +116,7 @@ extern "C"
 	}
 
 	// Load 64-bit
-	void JIT_DECL RSP_LDV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(LDV)
 	{
 		TRACE_LS(LDV);
 		unsigned addr = rsp->sr[base] + offset * 8;
@@ -104,7 +126,7 @@ extern "C"
 	}
 
 	// Store 64-bit
-	void JIT_DECL RSP_SDV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(SDV)
 	{
 		TRACE_LS(SDV);
 		unsigned addr = (rsp->sr[base] + offset * 8) & 0xfff;
@@ -124,16 +146,17 @@ extern "C"
 		}
 		else
 		{
-			e >>= 1;
+		    unsigned _e = e;
+			_e >>= 1;
 			for (unsigned i = 0; i < 4; i++)
 			{
-				WRITE_MEM_U16(rsp->dmem, (addr + 2 * i) & 0xfff, rsp->cp2.regs[rt].e[e + i]);
+				WRITE_MEM_U16(rsp->dmem, (addr + 2 * i) & 0xfff, rsp->cp2.regs[rt].e[_e + i]);
 			}
 		}
 	}
 
 	// Load 8x8-bit into high bits.
-	void JIT_DECL RSP_LPV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(LPV)
 	{
 		TRACE_LS(LPV);
 		unsigned addr = (rsp->sr[base] + offset * 8) & 0xfff;
@@ -145,7 +168,7 @@ extern "C"
 			reg[i] = READ_MEM_U8(rsp->dmem, (addr + (i + index & 0xf)) & 0xfff) << 8;
 	}
 
-	void JIT_DECL RSP_SPV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(SPV)
 	{
 		TRACE_LS(SPV);
 		unsigned addr = (rsp->sr[base] + offset * 8) & 0xfff;
@@ -160,7 +183,7 @@ extern "C"
 	// Load 8x8-bit into high bits, but shift by 7 instead of 8.
 	// Was probably used for certain fixed point algorithms to get more headroom without
 	// saturation, but weird nonetheless.
-	void JIT_DECL RSP_LUV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(LUV)
 	{
 		TRACE_LS(LUV);
 		unsigned addr = (rsp->sr[base] + offset * 8) & 0xfff;
@@ -172,7 +195,7 @@ extern "C"
 			reg[i] = READ_MEM_U8(rsp->dmem, (addr + (i + index & 0xf)) & 0xfff) << 7;
 	}
 
-	void JIT_DECL RSP_SUV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(SUV)
 	{
 		TRACE_LS(SUV);
 		unsigned addr = (rsp->sr[base] + offset * 8) & 0xfff;
@@ -186,7 +209,7 @@ extern "C"
 
 	// Load 8x8-bits into high bits, but shift by 7 instead of 8.
 	// Seems to differ from LUV in that it loads every other byte instead of packed bytes.
-	void JIT_DECL RSP_LHV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(LHV)
 	{
 		TRACE_LS(LHV);
 		unsigned addr = rsp->sr[base] + offset * 16;
@@ -198,7 +221,7 @@ extern "C"
 			reg[i] = (uint16_t)READ_MEM_U8(rsp->dmem, (addr + (index + i * 2 & 0xf)) & 0xfff) << 7;
 	}
 
-	void JIT_DECL RSP_SHV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(SHV)
 	{
 		TRACE_LS(SHV);
 		unsigned addr = (rsp->sr[base] + offset * 16) & 0xfff;
@@ -214,7 +237,7 @@ extern "C"
 		}
 	}
 
-	void JIT_DECL RSP_LFV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(LFV)
 	{
 		TRACE_LS(LFV);
 		RSPVector<1> temp;
@@ -240,7 +263,7 @@ extern "C"
 	WRITE_MEM_U8(rsp->dmem, addr + (8 + base & 0xf), int16_t(reg[c]) >> 7); \
 	WRITE_MEM_U8(rsp->dmem, addr + (12 + base & 0xf), int16_t(reg[d]) >> 7);
 
-	void JIT_DECL RSP_SFV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(SFV)
 	{
 		TRACE_LS(SFV);
 		unsigned addr = (rsp->sr[base] + offset * 16) & 0xfff;
@@ -281,7 +304,7 @@ extern "C"
 		}
 	}
 
-	void JIT_DECL RSP_LWV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(LWV)
 	{
 		TRACE_LS(LWV);
 		unsigned addr = rsp->sr[base] + offset * 16;
@@ -292,7 +315,7 @@ extern "C"
 		}
 	}
 
-	void JIT_DECL RSP_SWV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(SWV)
 	{
 		TRACE_LS(SWV);
 
@@ -304,7 +327,7 @@ extern "C"
 			WRITE_MEM_U8(rsp->dmem, addr + (base++ & 0xf), READ_VEC_U8(rsp->cp2.regs[rt], i & 0xf));
 	}
 
-	void JIT_DECL RSP_LQV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(LQV)
 	{
 		TRACE_LS(LQV);
 		unsigned addr = rsp->sr[base] + offset * 16;
@@ -315,7 +338,7 @@ extern "C"
 			WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
 	}
 
-	void JIT_DECL RSP_SQV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(SQV)
 	{
 		TRACE_LS(SQV);
 		unsigned addr = (rsp->sr[base] + offset * 16) & 0xfff;
@@ -325,7 +348,7 @@ extern "C"
 			WRITE_MEM_U8(rsp->dmem, addr++, READ_VEC_U8(rsp->cp2.regs[rt], i & 15));
 	}
 
-	void JIT_DECL RSP_LRV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(LRV)
 	{
 		TRACE_LS(LRV);
 		unsigned addr = rsp->sr[base] + offset * 16;
@@ -336,7 +359,7 @@ extern "C"
 			WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
 	}
 
-	void JIT_DECL RSP_SRV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(SRV)
 	{
 		TRACE_LS(SRV);
 		unsigned addr = (rsp->sr[base] + offset * 16) & 0xfff;
@@ -348,7 +371,7 @@ extern "C"
 			WRITE_MEM_U8(rsp->dmem, addr++, READ_VEC_U8(rsp->cp2.regs[rt], i + base & 0xf));
 	}
 
-	void JIT_DECL RSP_LTV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(LTV)
 	{
 		TRACE_LS(LTV);
 		unsigned addr = rsp->sr[base] + offset * 16;
@@ -367,15 +390,16 @@ extern "C"
 		}
 	}
 
-	void JIT_DECL RSP_STV(RSP::CPUState *rsp, unsigned rt, unsigned e, int offset, unsigned base)
+	IMPL_LS(STV)
 	{
 		TRACE_LS(STV);
-		e &= ~1;
+		unsigned _e = e;
+		_e &= ~1;
 		rt &= ~7;
 
 		unsigned addr = (rsp->sr[base] + offset * 16) & 0xfff;
-		unsigned element = 16 - e;
-		base = (addr & 7) - e;
+		unsigned element = 16 - _e;
+		base = (addr & 7) - _e;
 		addr &= ~7;
 
 		for (unsigned i = rt; i < rt + 8; i++ )
