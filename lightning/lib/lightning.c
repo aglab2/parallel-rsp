@@ -1736,6 +1736,16 @@ _jit_classify(jit_state_t *_jit, jit_code_t code)
 	    mask = jit_cc_a0_reg|jit_cc_a0_chg|
 		   jit_cc_a1_reg|jit_cc_a1_rlh|jit_cc_a2_dbl;
 	    break;
+	
+	case jit_code_pushimm:
+		mask = jit_cc_a0_int;
+		break;
+	case jit_code_pushr:
+		mask = jit_cc_a0_reg;
+		break;
+	case jit_code_popr:
+		mask = jit_cc_a0_reg;
+		break;
 	default:
 	    abort();
     }

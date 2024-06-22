@@ -2112,3 +2112,6 @@
 #endif /* __CYGWIN__ || _WIN32 */
 #  endif /* __X64_32 */
 #endif /* __X64 */
+    5, /* pushimm */
+    1, /* pushr */
+    1, /* popr */

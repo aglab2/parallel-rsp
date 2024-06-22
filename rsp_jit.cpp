@@ -239,7 +239,7 @@ extern "C"
 		return static_cast<CPU *>(cpu)->get_jit_block(pc);
 	}
 
-	static jit_word_t JIT_DECL rsp_unaligned_lh(const uint8_t *dram, jit_word_t addr)
+	static jit_word_t JIT_UA_DECL rsp_unaligned_lh(const uint8_t *dram, jit_word_t addr)
 	{
 		auto off0 = BYTE_ENDIAN_FIXUP(addr, 0);
 		auto off1 = BYTE_ENDIAN_FIXUP(addr, 1);
@@ -247,7 +247,7 @@ extern "C"
 		                          (dram[off1] << 0)));
 	}
 
-	static jit_word_t JIT_DECL rsp_unaligned_lw(const uint8_t *dram, jit_word_t addr)
+	static jit_word_t JIT_UA_DECL rsp_unaligned_lw(const uint8_t *dram, jit_word_t addr)
 	{
 		auto off0 = BYTE_ENDIAN_FIXUP(addr, 0);
 		auto off1 = BYTE_ENDIAN_FIXUP(addr, 1);
@@ -261,7 +261,7 @@ extern "C"
 		                  (int32_t(dram[off3]) << 0));
 	}
 
-	static jit_uword_t JIT_DECL rsp_unaligned_lhu(const uint8_t *dram, jit_word_t addr)
+	static jit_uword_t JIT_UA_DECL rsp_unaligned_lhu(const uint8_t *dram, jit_word_t addr)
 	{
 		auto off0 = BYTE_ENDIAN_FIXUP(addr, 0);
 		auto off1 = BYTE_ENDIAN_FIXUP(addr, 1);
@@ -269,7 +269,7 @@ extern "C"
 		                          (dram[off1] << 0)));
 	}
 
-	static void JIT_DECL rsp_unaligned_sh(uint8_t *dram, jit_word_t addr, jit_word_t data)
+	static void JIT_UA_DECL rsp_unaligned_sh(uint8_t *dram, jit_word_t addr, jit_word_t data)
 	{
 		auto off0 = BYTE_ENDIAN_FIXUP(addr, 0);
 		auto off1 = BYTE_ENDIAN_FIXUP(addr, 1);
@@ -277,7 +277,7 @@ extern "C"
 		dram[off1] = (data >> 0) & 0xff;
 	}
 
-	static void JIT_DECL rsp_unaligned_sw(uint8_t *dram, jit_word_t addr, jit_word_t data)
+	static void JIT_UA_DECL rsp_unaligned_sw(uint8_t *dram, jit_word_t addr, jit_word_t data)
 	{
 		auto off0 = BYTE_ENDIAN_FIXUP(addr, 0);
 		auto off1 = BYTE_ENDIAN_FIXUP(addr, 1);
@@ -729,7 +729,7 @@ void CPU::jit_exit_dynamic(jit_state_t *_jit, uint32_t pc, const InstructionInfo
 void CPU::jit_emit_store_operation(jit_state_t *_jit,
                                    uint32_t pc, uint32_t instr,
                                    void (*jit_emitter)(jit_state_t *jit, unsigned, unsigned, unsigned), const char *asmop,
-                                   Func rsp_unaligned_op,
+                                   UnalignedFunc rsp_unaligned_op,
                                    uint32_t endian_flip,
                                    const InstructionInfo &last_info)
 {
@@ -769,10 +769,17 @@ void CPU::jit_emit_store_operation(jit_state_t *_jit,
 		aligned = jit_jmpi();
 		jit_patch(unaligned);
 		jit_begin_call(_jit);
+#ifdef HAS_FASTCALL
+		// Fastcall might murder rs_tmp_reg or rt_reg so push those on stack via stdcall instead
+		jit_pushr(rt_reg);
+		jit_pushr(rs_tmp_reg);
+		jit_pushr(JIT_REGISTER_DMEM);
+#else
 		jit_pushargr(JIT_REGISTER_DMEM);
 		jit_pushargr(rs_tmp_reg);
 		jit_pushargr(rt_reg);
-		jit_end_call(_jit, rsp_unaligned_op);
+#endif
+		jit_end_call(_jit, (Func) rsp_unaligned_op);
 		jit_patch(aligned);
 	}
 	else
@@ -789,7 +796,7 @@ void CPU::jit_emit_store_operation(jit_state_t *_jit,
 void CPU::jit_emit_load_operation(jit_state_t *_jit,
                                   uint32_t pc, uint32_t instr,
                                   void (*jit_emitter)(jit_state_t *jit, unsigned, unsigned, unsigned), const char *asmop,
-                                  Func rsp_unaligned_op,
+                                  UnalignedFunc rsp_unaligned_op,
                                   uint32_t endian_flip,
                                   const InstructionInfo &last_info)
 {
@@ -839,9 +846,15 @@ void CPU::jit_emit_load_operation(jit_state_t *_jit,
 	{
 		// We're going to call, so need to save caller-save register we care about.
 		jit_begin_call(_jit);
+#ifdef HAS_FASTCALL
+		// Fastcall might murder rs_tmp_reg or rt_reg so push those on stack via stdcall instead
+		jit_pushr(rs_tmp_reg);
+		jit_pushr(JIT_REGISTER_DMEM);
+#else
 		jit_pushargr(JIT_REGISTER_DMEM);
 		jit_pushargr(rs_tmp_reg);
-		jit_end_call(_jit, rsp_unaligned_op);
+#endif
+		jit_end_call(_jit, (Func) rsp_unaligned_op);
 		jit_retval(ret_reg);
 		jit_patch(aligned);
 	}
@@ -899,9 +912,16 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		jit_begin_call(_jit);
 		jit_pushargr(JIT_REGISTER_STATE);
 		jit_pushargi(vd);
+		// Don't look ahead, cursed content ahead - I flip params from 3 onwards because fastcall flips arguments and gnu lightning is too dumb :)
+#ifdef HAS_FASTCALL
+		jit_pushargi(e);
+		jit_pushargi(vt);
+		jit_pushargi(vs);
+#else
 		jit_pushargi(vs);
 		jit_pushargi(vt);
 		jit_pushargi(e);
+#endif
 		jit_end_call(_jit, (Func) vuop);
 		return;
 	}
@@ -1504,8 +1524,13 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			jit_begin_call(_jit);
 			jit_pushargr(JIT_REGISTER_STATE);
 			jit_pushargi(rt);
+#ifdef HAS_FASTCALL
+			jit_pushargi(imm);
+			jit_pushargi(rd);
+#else
 			jit_pushargi(rd);
 			jit_pushargi(imm);
+#endif
 			jit_end_call(_jit, reinterpret_cast<Func>(RSP_MFC2));
 			break;
 		}
@@ -1529,8 +1554,13 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			jit_begin_call(_jit);
 			jit_pushargr(JIT_REGISTER_STATE);
 			jit_pushargi(rt);
+#ifdef HAS_FASTCALL
+			jit_pushargi(imm);
+			jit_pushargi(rd);
+#else
 			jit_pushargi(rd);
 			jit_pushargi(imm);
+#endif
 			jit_end_call(_jit, reinterpret_cast<Func>(RSP_MTC2));
 			break;
 		}
@@ -1569,7 +1599,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		jit_emit_load_operation(_jit, pc, instr,
 		                        [](jit_state_t *_jit, unsigned a, unsigned b, unsigned c) { jit_ldxr_s(a, b, c); },
 		                        "lh",
-		                        reinterpret_cast<Func>(rsp_unaligned_lh),
+		                        reinterpret_cast<UnalignedFunc>(rsp_unaligned_lh),
 		                        2, last_info);
 		break;
 	}
@@ -1580,7 +1610,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		jit_emit_load_operation(_jit, pc, instr,
 		                        [](jit_state_t *_jit, unsigned a, unsigned b, unsigned c) { jit_ldxr_i(a, b, c); },
 		                        "lw",
-		                        reinterpret_cast<Func>(rsp_unaligned_lw),
+		                        reinterpret_cast<UnalignedFunc>(rsp_unaligned_lw),
 		                        0, last_info);
 		break;
 	}
@@ -1600,7 +1630,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		jit_emit_load_operation(_jit, pc, instr,
 		                        [](jit_state_t *_jit, unsigned a, unsigned b, unsigned c) { jit_ldxr_us(a, b, c); },
 		                        "lhu",
-		                        reinterpret_cast<Func>(rsp_unaligned_lhu),
+		                        reinterpret_cast<UnalignedFunc>(rsp_unaligned_lhu),
 		                        2, last_info);
 		break;
 	}
@@ -1620,7 +1650,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		jit_emit_store_operation(_jit, pc, instr,
 		                         [](jit_state_t *_jit, unsigned a, unsigned b, unsigned c) { jit_stxr_s(a, b, c); },
 		                         "sh",
-		                         reinterpret_cast<Func>(rsp_unaligned_sh),
+		                         reinterpret_cast<UnalignedFunc>(rsp_unaligned_sh),
 		                         2, last_info);
 		break;
 	}
@@ -1630,7 +1660,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		jit_emit_store_operation(_jit, pc, instr,
 		                         [](jit_state_t *_jit, unsigned a, unsigned b, unsigned c) { jit_stxr_i(a, b, c); },
 		                         "sh",
-		                         reinterpret_cast<Func>(rsp_unaligned_sw),
+		                         reinterpret_cast<UnalignedFunc>(rsp_unaligned_sw),
 		                         0, last_info);
 		break;
 	}
@@ -1685,8 +1715,13 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			jit_begin_call(_jit);
 			jit_pushargr(JIT_REGISTER_STATE);
 			jit_pushargi(rt);
+#ifdef HAS_FASTCALL
+			jit_pushargi(rs);
+			jit_pushargi(simm);
+#else
 			jit_pushargi(simm);
 			jit_pushargi(rs);
+#endif
 			jit_end_call(_jit, reinterpret_cast<Func>(op));
 		}
 		break;
@@ -1742,8 +1777,13 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			jit_begin_call(_jit);
 			jit_pushargr(JIT_REGISTER_STATE);
 			jit_pushargi(rt);
+#ifdef HAS_FASTCALL
+			jit_pushargi(rs);
+			jit_pushargi(simm);
+#else
 			jit_pushargi(simm);
 			jit_pushargi(rs);
+#endif
 			jit_end_call(_jit, reinterpret_cast<Func>(op));
 		}
 		break;

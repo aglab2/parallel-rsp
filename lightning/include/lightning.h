@@ -434,12 +434,10 @@ typedef enum {
 #define jit_exti_us(u,v)	jit_new_node_ww(jit_code_exti_us,u,v)
     jit_code_extr_us,		jit_code_exti_us,
 
-#if __WORDSIZE == 64
 #  define jit_extr_i(u,v)	jit_new_node_ww(jit_code_extr_i,u,v)
 #  define jit_exti_i(u,v)	jit_new_node_ww(jit_code_exti_i,u,v)
 #  define jit_extr_ui(u,v)	jit_new_node_ww(jit_code_extr_ui,u,v)
 #  define jit_exti_ui(u,v)	jit_new_node_ww(jit_code_exti_ui,u,v)
-#endif
     jit_code_extr_i,		jit_code_exti_i,
     jit_code_extr_ui,		jit_code_exti_ui,
 
@@ -1206,6 +1204,13 @@ typedef enum {
 #define jit_fnmsr_d(u,v,w,x)	jit_new_node_wqw(jit_code_fnmsr_d, u, v, w, x)
 #define jit_fnmsi_d(u,v,w,x)	_jit_fnmsi_d(_jit, u, v, w, x)
     jit_code_fnmsr_d,		jit_code_fnmsi_d,
+    
+#define jit_pushimm(u)		jit_new_node_w(jit_code_pushimm, u)
+    jit_code_pushimm,
+#define jit_pushr(u)		jit_new_node_w(jit_code_pushr, u)
+    jit_code_pushr,
+#define jit_popr(u)		jit_new_node_w(jit_code_popr, u)
+    jit_code_popr,
 
     jit_code_last_code
 } jit_code_t;

@@ -193,6 +193,8 @@ static void
 _lea(jit_state_t*,jit_int32_t,jit_int32_t,jit_int32_t,jit_int32_t,jit_int32_t);
 #  define pushr(r0)			_pushr(_jit, r0)
 static void _pushr(jit_state_t*, jit_int32_t) maybe_unused;
+#  define pushimm(v)			_pushimm(_jit, v)
+static void _pushimm(jit_state_t*, jit_int32_t) maybe_unused;
 #  define popr(r0)			_popr(_jit, r0)
 static void _popr(jit_state_t*, jit_int32_t) maybe_unused;
 #  define xchgr(r0, r1)			_xchgr(_jit, r0, r1)
@@ -1000,6 +1002,15 @@ _pushr(jit_state_t *_jit, jit_int32_t r0)
 {
     rex(0, WIDE, 0, 0, r0);
     ic(0x50 | r7(r0));
+}
+
+static void
+_pushimm(jit_state_t *_jit, jit_int32_t w)
+{
+    // Yeah, we are on x86-64, so rex is something we do not need to take care of
+    // rex(0, WIDE, 0, 0, r0);
+    ic(0x68);
+    ii(w);
 }
 
 static void

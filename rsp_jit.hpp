@@ -23,6 +23,7 @@ namespace RSP
 namespace JIT
 {
 typedef void(JIT_DECL *Func)(void);
+typedef void(JIT_UA_DECL *UnalignedFunc)(void);
 
 class RegisterCache
 {
@@ -170,12 +171,12 @@ private:
 	void jit_mark_block_entries(uint32_t pc, uint32_t end, bool *block_entries);
 	void jit_emit_load_operation(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 	                             void (*jit_emitter)(jit_state_t *_jit, unsigned, unsigned, unsigned), const char *asmop,
-	                             Func rsp_unaligned_op,
+	                             UnalignedFunc rsp_unaligned_op,
 	                             uint32_t endian_flip,
 	                             const InstructionInfo &last_info);
 	void jit_emit_store_operation(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 	                              void (*jit_emitter)(jit_state_t *_jit, unsigned, unsigned, unsigned), const char *asmop,
-	                              Func rsp_unaligned_op,
+	                              UnalignedFunc rsp_unaligned_op,
 	                              uint32_t endian_flip,
 	                              const InstructionInfo &last_info);
 

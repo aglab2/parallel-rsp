@@ -345,10 +345,8 @@ typedef enum {
 #define jit_extr_s(u,v)		jit_new_node_ww(jit_code_extr_s,u,v)
 #define jit_extr_us(u,v)	jit_new_node_ww(jit_code_extr_us,u,v)
     jit_code_extr_s,		jit_code_extr_us,
-#if __WORDSIZE == 64
 #  define jit_extr_i(u,v)	jit_new_node_ww(jit_code_extr_i,u,v)
 #  define jit_extr_ui(u,v)	jit_new_node_ww(jit_code_extr_ui,u,v)
-#endif
     jit_code_extr_i,		jit_code_extr_ui,
 
 #define jit_htonr_us(u,v)	jit_new_node_ww(jit_code_htonr_us,u,v)
