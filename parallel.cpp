@@ -204,7 +204,7 @@ extern "C"
 	{
 		PluginInfo->Version = 0x0101;
 		PluginInfo->Type = PLUGIN_TYPE_RSP;
-		strcpy(PluginInfo->Name, "ParaLLel Launcher RSP Plugin");
+		strcpy(PluginInfo->Name, "ParaLLel Launcher RSP Plugin v0.4");
 		PluginInfo->NormalMemory = 1;
 		PluginInfo->MemoryBswaped = 1;
 	}

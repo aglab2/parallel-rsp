@@ -72,7 +72,7 @@ namespace LS
 		unsigned addr = rsp->sr[base] + offset * 2;
 	    const unsigned end = (e > 14) ? 16 : (e + 2);
 		for (unsigned i = e; i < end; i++)
-			WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+			WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, (addr + i - e) & 0xfff));
 	}
 
 	// Store 16-bit
@@ -98,7 +98,7 @@ namespace LS
 		unsigned addr = rsp->sr[base] + offset * 4;
 	    const unsigned end = (e > 12) ? 16 : (e + 4);
 		for (unsigned i = e; i < end; i++)
-			WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+		    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, (addr + i - e) & 0xfff));
 	}
 
 	// Store 32-bit
@@ -120,9 +120,9 @@ namespace LS
 	{
 		TRACE_LS(LDV);
 		unsigned addr = rsp->sr[base] + offset * 8;
-		const unsigned end = (e > 8) ? 16 : (e + 8);
+	    const unsigned end = (e > 8) ? 16 : (e + 8);
 		for (unsigned i = e; i < end; i++)
-			WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+		    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, (addr + i - e) & 0xfff));
 	}
 
 	// Store 64-bit
@@ -176,7 +176,7 @@ namespace LS
 
 		for (unsigned i = e; i < e + 8; i++) {
 			const unsigned shift = ((i & 0xf) < 8) ? 8 : 7;
-			WRITE_MEM_U8(rsp->dmem, addr++ & 0xfff, int16_t(reg[i & 7]) >> shift);
+		    WRITE_MEM_U8(rsp->dmem, (addr + i - e) & 0xfff, int16_t(reg[i & 7]) >> shift);
 		}
 	}
 
@@ -203,7 +203,7 @@ namespace LS
 
 		for (unsigned i = e; i < e + 8; i++) {
 			const unsigned shift = ((i & 0xf) < 8) ? 7 : 8;
-			WRITE_MEM_U8(rsp->dmem, addr++ & 0xfff, int16_t(reg[i & 7]) >> shift);
+		    WRITE_MEM_U8(rsp->dmem, (addr + i - e) & 0xfff, int16_t(reg[i & 7]) >> shift);
 		}
 	}
 
@@ -337,9 +337,8 @@ namespace LS
 		    if (end > 16)
 			    end = 16;
 
-			#pragma omp simd
 		    for (unsigned i = e; i < end; i++)
-			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, (addr + i - e)));
 		}
 		else
 	    {
@@ -348,7 +347,7 @@ namespace LS
 			    end = 16;
 
 		    for (unsigned i = e; i < end; i++)
-			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, (addr + i - e) & 0xfff));
 		}
 	}
 
@@ -360,13 +359,13 @@ namespace LS
 	    {
 		    unsigned end = e + 16;
 		    for (unsigned i = e; i < end; i++)
-			    WRITE_MEM_U8(rsp->dmem, addr++, READ_VEC_U8(rsp->cp2.regs[rt], i & 15));
+			    WRITE_MEM_U8(rsp->dmem, (addr + i - e), READ_VEC_U8(rsp->cp2.regs[rt], i & 15));
 		}
 		else
 	    {
 		    const unsigned end = e + (16 - (addr & 15));
 		    for (unsigned i = e; i < end; i++)
-			    WRITE_MEM_U8(rsp->dmem, addr++, READ_VEC_U8(rsp->cp2.regs[rt], i & 15));
+			    WRITE_MEM_U8(rsp->dmem, (addr + i - e), READ_VEC_U8(rsp->cp2.regs[rt], i & 15));
 		}
 	}
 
@@ -379,7 +378,7 @@ namespace LS
 	    {
 		    constexpr unsigned start = 16 + e;
 		    for (unsigned i = start; i < 16; i++)
-			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, (addr + i - start)));
 	    }
 		else
 	    {
@@ -387,7 +386,7 @@ namespace LS
 		    addr &= ~0xf;
 
 		    for (unsigned i = start; i < 16; i++)
-			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, (addr + i - start) & 0xfff));
 		}
 	}
 
@@ -402,7 +401,7 @@ namespace LS
 		    base = 16;
 
 		    for (unsigned i = e; i < end; i++)
-			    WRITE_MEM_U8(rsp->dmem, addr++, READ_VEC_U8(rsp->cp2.regs[rt], i + base & 0xf));
+			    WRITE_MEM_U8(rsp->dmem, (addr + i - e), READ_VEC_U8(rsp->cp2.regs[rt], i + base & 0xf));
 		}
 		else
 	    {
@@ -411,7 +410,7 @@ namespace LS
 		    addr &= ~0xf;
 
 		    for (unsigned i = e; i < end; i++)
-			    WRITE_MEM_U8(rsp->dmem, addr++, READ_VEC_U8(rsp->cp2.regs[rt], i + base & 0xf));
+			    WRITE_MEM_U8(rsp->dmem, (addr + i - e), READ_VEC_U8(rsp->cp2.regs[rt], i + base & 0xf));
 		}
 	}
 
