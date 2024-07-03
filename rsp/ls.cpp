@@ -14,6 +14,13 @@ struct RSPVector
 	uint16_t e[8 * N];
 };
 
+#define USE_VEC_OPTS defined(__clang__) || defined(__GNUC__)
+
+#ifdef USE_VEC_OPTS
+using Vec16b = uint8_t __attribute__((vector_size(16)));
+using Vec8b = uint8_t __attribute__((vector_size(8)));
+#endif
+
 #define READ_VEC_U8(vec, addr) (reinterpret_cast<const uint8_t *>(vec.e)[MES(addr)])
 #define WRITE_VEC_U8(vec, addr, data) (reinterpret_cast<uint8_t *>(vec.e)[MES(addr)] = data)
 
@@ -333,13 +340,24 @@ namespace LS
 	    unsigned addr = rsp->sr[base] + offset * 16;
 		if (__builtin_expect(0 == (addr & 0xf), true))
 	    {
+		    addr &= 0xfff;
 		    unsigned end = 16 + e;
 		    if (end > 16)
 			    end = 16;
 
-			#pragma omp simd
-		    for (unsigned i = e; i < end; i++)
-			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+#ifdef USE_VEC_OPTS
+			if (0 == e)
+		    {
+			    Vec16b v = *reinterpret_cast<Vec16b *>(&rsp->dmem[addr / sizeof(uint32_t)]);
+			    Vec16b *addrp = reinterpret_cast<Vec16b *>(rsp->cp2.regs[rt].e);
+			    *addrp = __builtin_shufflevector(v, v, 2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13);
+			}
+			else
+#endif
+		    {
+			    for (unsigned i = e; i < end; i++)
+				    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++));
+			}
 		}
 		else
 	    {
@@ -359,8 +377,19 @@ namespace LS
 	    if (__builtin_expect(0 == (addr & 0xf), true))
 	    {
 		    unsigned end = e + 16;
-		    for (unsigned i = e; i < end; i++)
-			    WRITE_MEM_U8(rsp->dmem, addr++, READ_VEC_U8(rsp->cp2.regs[rt], i & 15));
+#ifdef USE_VEC_OPTS
+			if (0 == e)
+		    {
+			    Vec16b v = *reinterpret_cast<Vec16b *>(rsp->cp2.regs[rt].e);
+			    Vec16b *addrp = reinterpret_cast<Vec16b*>(&rsp->dmem[addr / sizeof(uint32_t)]);
+			    *addrp = __builtin_shufflevector(v, v, 2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13);
+			}
+			else
+#endif
+		    {
+			    for (unsigned i = e; i < end; i++)
+				    WRITE_MEM_U8(rsp->dmem, addr++, READ_VEC_U8(rsp->cp2.regs[rt], i & 15));
+			}
 		}
 		else
 	    {
@@ -377,9 +406,10 @@ namespace LS
 
 	    if (__builtin_expect(0 == (addr & 0xf), true))
 	    {
+			addr &= 0xfff;
 		    constexpr unsigned start = 16 + e;
 		    for (unsigned i = start; i < 16; i++)
-			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++));
 	    }
 		else
 	    {
