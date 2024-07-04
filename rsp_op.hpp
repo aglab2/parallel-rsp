@@ -35,7 +35,7 @@ DECL_LS(SHV);
 DECL_LS(SFV);
 DECL_LS(SWV);
 DECL_LS(STV);
-}
+} // namespace LS
 
 extern "C"
 {
@@ -51,8 +51,12 @@ extern "C"
 	void JIT_DECL RSP_RETURN(void *opaque, unsigned pc);
 	void JIT_DECL RSP_EXIT(void *opaque, int mode);
 	void JIT_DECL RSP_REPORT_PC(void *rsp, unsigned pc, unsigned instr);
+}
 
-#define DECL_COP2(op) void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt, unsigned e)
+namespace VU
+{
+#define DECL_COP2(op) \
+template <unsigned e> void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt)
 	DECL_COP2(VMULF);
 	DECL_COP2(VMULU);
 	DECL_COP2(VRNDP);

@@ -1,5 +1,6 @@
 #include "rsp_jit.hpp"
 #include "rsp_disasm.hpp"
+#include "element_instantiate.h"
 #include <utility>
 #include <assert.h>
 
@@ -893,20 +894,42 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		uint32_t vt = (instr >> 16) & 31;
 		uint32_t e = (instr >> 21) & 15;
 
-		using VUOp = void (JIT_DECL *)(RSP::CPUState *, unsigned vd, unsigned vs, unsigned vt, unsigned e);
+		using VUOp = void (JIT_DECL *)(RSP::CPUState *, unsigned vd, unsigned vs, unsigned vt);
 
-		static const VUOp ops[64] = {
-			RSP_VMULF, RSP_VMULU, RSP_VRNDP, RSP_VMULQ, RSP_VMUDL, RSP_VMUDM, RSP_VMUDN, RSP_VMUDH, RSP_VMACF, RSP_VMACU, RSP_VRNDN,
-			RSP_VMACQ, RSP_VMADL, RSP_VMADM, RSP_VMADN, RSP_VMADH, RSP_VADD, RSP_VSUB, nullptr, RSP_VABS, RSP_VADDC, RSP_VSUBC,
-			nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, RSP_VSAR, nullptr, nullptr, RSP_VLT,
-			RSP_VEQ, RSP_VNE, RSP_VGE, RSP_VCL, RSP_VCH, RSP_VCR, RSP_VMRG, RSP_VAND, RSP_VNAND, RSP_VOR, RSP_VNOR,
-			RSP_VXOR, RSP_VNXOR, nullptr, nullptr, RSP_VRCP, RSP_VRCPL, RSP_VRCPH, RSP_VMOV, RSP_VRSQ, RSP_VRSQL, RSP_VRSQH,
-			RSP_VNOP, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, RSP_VNOP
+		VUOp vuop = nullptr;
+#define OPS_DECL(e) \
+		static const VUOp ops##e[64] = { \
+			VU::RSP_VMULF<e>, VU::RSP_VMULU<e>, VU::RSP_VRNDP<e>, VU::RSP_VMULQ<e>, VU::RSP_VMUDL<e>, VU::RSP_VMUDM<e>, VU::RSP_VMUDN<e>, VU::RSP_VMUDH<e>, \
+			VU::RSP_VMACF<e>, VU::RSP_VMACU<e>, VU::RSP_VRNDN<e>, VU::RSP_VMACQ<e>, VU::RSP_VMADL<e>, VU::RSP_VMADM<e>, VU::RSP_VMADN<e>, VU::RSP_VMADH<e>, \
+			VU::RSP_VADD<e> , VU::RSP_VSUB<e>,  nullptr		    , VU::RSP_VABS<e> , VU::RSP_VADDC<e>, VU::RSP_VSUBC<e>, nullptr		    , nullptr,          \
+			nullptr,          nullptr,          nullptr,          nullptr,          nullptr,          VU::RSP_VSAR<e>,  nullptr,		  nullptr,          \
+			VU::RSP_VLT<e>, VU::RSP_VEQ<e>,   VU::RSP_VNE<e>,   VU::RSP_VGE<e>,          \
+		VU::RSP_VCL<e>,   VU::RSP_VCH<e>,   VU::RSP_VCR<e>,   VU::RSP_VMRG<e>,  \
+		                          VU::RSP_VAND<e>,  VU::RSP_VNAND<e>,        \
+		VU::RSP_VOR<e>,   VU::RSP_VNOR<e>, \
+			VU::RSP_VXOR<e>,  VU::RSP_VNXOR<e>,    nullptr,          nullptr,          \
+		VU::RSP_VRCP<e>,  VU::RSP_VRCPL<e>, VU::RSP_VRCPH<e>, VU::RSP_VMOV<e>,  VU::RSP_VRSQ<e>, \
+		VU::RSP_VRSQL<e>,    \
+		VU::RSP_VRSQH<e>, \
+			VU::RSP_VNOP<e>,     nullptr,          nullptr,          nullptr,          nullptr,   \
+		nullptr,          nullptr,          nullptr,          VU::RSP_VNOP<e> \
 		};
 
-		auto *vuop = ops[op];
-		if (!vuop)
-			vuop = RSP_RESERVED;
+		switch (e)
+		{
+#define OPS_CASE(a, e)   \
+	case e:              \
+	{                    \
+		OPS_DECL(e);     \
+		vuop = ops##e[op]; \
+		if (!vuop) \
+				vuop = VU::RSP_RESERVED<e>; \
+	}                    \
+	break;
+			ELEMENT_INSTANTIATE(a, OPS_CASE)
+#undef OPS_CASE
+		}
+#undef OPS_DECL
 
 		regs.flush_caller_save_registers(_jit);
 		jit_begin_call(_jit);
@@ -914,13 +937,11 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		jit_pushargi(vd);
 		// Don't look ahead, cursed content ahead - I flip params from 3 onwards because fastcall flips arguments and gnu lightning is too dumb :)
 #ifdef HAS_FASTCALL
-		jit_pushargi(e);
 		jit_pushargi(vt);
 		jit_pushargi(vs);
 #else
 		jit_pushargi(vs);
 		jit_pushargi(vt);
-		jit_pushargi(e);
 #endif
 		jit_end_call(_jit, (Func) vuop);
 		return;
@@ -1687,23 +1708,14 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		LWC2Op op = nullptr;
 		switch (imm)
 		{
-#define OPS_CASE(e) case e: { OPS_DECL(e); op = ops##e[rd]; } break
-			OPS_CASE(0);
-			OPS_CASE(1);
-			OPS_CASE(2);
-			OPS_CASE(3);
-			OPS_CASE(4);
-			OPS_CASE(5);
-			OPS_CASE(6);
-			OPS_CASE(7);
-			OPS_CASE(8);
-			OPS_CASE(9);
-			OPS_CASE(10);
-			OPS_CASE(11);
-			OPS_CASE(12);
-			OPS_CASE(13);
-			OPS_CASE(14);
-			OPS_CASE(15);
+#define OPS_CASE(a, e)   \
+	case e:              \
+	{                    \
+		OPS_DECL(e);     \
+		op = ops##e[rd]; \
+	}                    \
+	break;
+			ELEMENT_INSTANTIATE(a, OPS_CASE)
 #undef OPS_CASE
 		}
 #undef OPS_DECL
@@ -1749,23 +1761,14 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		SWC2Op op = nullptr;
 		switch (imm)
 		{
-#define OPS_CASE(e) case e: { OPS_DECL(e); op = ops##e[rd]; } break
-			OPS_CASE(0);
-			OPS_CASE(1);
-			OPS_CASE(2);
-			OPS_CASE(3);
-			OPS_CASE(4);
-			OPS_CASE(5);
-			OPS_CASE(6);
-			OPS_CASE(7);
-			OPS_CASE(8);
-			OPS_CASE(9);
-			OPS_CASE(10);
-			OPS_CASE(11);
-			OPS_CASE(12);
-			OPS_CASE(13);
-			OPS_CASE(14);
-			OPS_CASE(15);
+#define OPS_CASE(a, e)   \
+	case e:              \
+	{                    \
+		OPS_DECL(e);     \
+		op = ops##e[rd]; \
+	}                    \
+	break;
+			ELEMENT_INSTANTIATE(a, OPS_CASE)
 #undef OPS_CASE
 		}
 #undef OPS_DECL
