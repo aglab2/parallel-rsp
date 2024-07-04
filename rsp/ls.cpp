@@ -1,5 +1,6 @@
 #include "../state.hpp"
 #include "../jit_decl.h"
+#include "../element_instantiate.h"
 
 #ifdef TRACE_COP2
 #include <stdio.h>
@@ -26,25 +27,13 @@ using Vec4h = uint16_t __attribute__((vector_size(8)));
 #define READ_VEC_U8(vec, addr) (reinterpret_cast<const uint8_t *>(vec.e)[MES(addr)])
 #define WRITE_VEC_U8(vec, addr, data) (reinterpret_cast<uint8_t *>(vec.e)[MES(addr)] = data)
 
+#define LS_INSTANTIATED(op, i) \
+	template void JIT_DECL RSP_##op<i>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base);
+
 #define IMPL_LS(op) \
 template<unsigned e> \
 void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<0>(RSP::CPUState *rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<1>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<2>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<3>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<4>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<5>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<6>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<7>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<8>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<9>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<10>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<11>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<12>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<13>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<14>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
-template void JIT_DECL RSP_##op<15>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base); \
+ELEMENT_INSTANTIATE(op, LS_INSTANTIATED) \
 template <unsigned e>                                                                       \
 	void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned rt, int offset, unsigned base)
 
