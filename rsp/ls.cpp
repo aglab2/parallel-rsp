@@ -18,7 +18,9 @@ struct RSPVector
 
 #ifdef USE_VEC_OPTS
 using Vec16b = uint8_t __attribute__((vector_size(16)));
-using Vec8b = uint8_t __attribute__((vector_size(8)));
+using Vec8h = uint16_t __attribute__((vector_size(16)));
+using Vec8b = uint8_t  __attribute__((vector_size(8)));
+using Vec4h = uint16_t __attribute__((vector_size(8)));
 #endif
 
 #define READ_VEC_U8(vec, addr) (reinterpret_cast<const uint8_t *>(vec.e)[MES(addr)])
@@ -127,9 +129,21 @@ namespace LS
 	{
 		TRACE_LS(LDV);
 		unsigned addr = rsp->sr[base] + offset * 8;
-		const unsigned end = (e > 8) ? 16 : (e + 8);
-		for (unsigned i = e; i < end; i++)
-			WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+	    const unsigned end = (e > 8) ? 16 : (e + 8);
+#ifdef USE_VEC_OPTS
+	    if ((0 == e || 8 == e) && __builtin_expect(0 == (addr & 7), true))
+	    {
+		    addr &= 0xfff;
+		    Vec4h v = *reinterpret_cast<Vec4h *>(&rsp->dmem[addr / sizeof(uint32_t)]);
+		    Vec4h *vout = reinterpret_cast<Vec4h *>(&rsp->cp2.regs[rt].e[e >> 1]);
+		    *vout = __builtin_shufflevector(v, v, 1, 0, 3, 2);
+	    }
+		else
+#endif
+		{
+			for (unsigned i = e; i < end; i++)
+				WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+		}
 	}
 
 	// Store 64-bit
@@ -153,11 +167,22 @@ namespace LS
 		}
 		else
 		{
-		    unsigned _e = e;
-		    _e >>= 1;
-			for (unsigned i = 0; i < 4; i++)
+#ifdef USE_VEC_OPTS
+		    if ((0 == e || 8 == e) && __builtin_expect(0 == (addr & 7), true))
 			{
-				WRITE_MEM_U16(rsp->dmem, (addr + 2 * i) & 0xfff, rsp->cp2.regs[rt].e[_e + i]);
+			    Vec4h v = *reinterpret_cast<Vec4h *>(&rsp->cp2.regs[rt].e[e >> 1]);
+			    Vec4h *vout = reinterpret_cast<Vec4h *>(&rsp->dmem[addr / sizeof(uint32_t)]);
+				*vout = __builtin_shufflevector(v, v, 1, 0, 3, 2);
+			}
+		    else
+#endif
+		    {
+			    unsigned _e = e;
+			    _e >>= 1;
+			    for (unsigned i = 0; i < 4; i++)
+			    {
+				    WRITE_MEM_U16(rsp->dmem, (addr + 2 * i) & 0xfff, rsp->cp2.regs[rt].e[_e + i]);
+			    }
 			}
 		}
 	}
@@ -165,14 +190,28 @@ namespace LS
 	// Load 8x8-bit into high bits.
 	IMPL_LS(LPV)
 	{
-		TRACE_LS(LPV);
-		unsigned addr = (rsp->sr[base] + offset * 8) & 0xfff;
-		const unsigned index = (addr & 7) - e;
-		addr &= ~7;
+	    TRACE_LS(LPV);
+	    unsigned addr = (rsp->sr[base] + offset * 8) & 0xfff;
+#if defined(USE_VEC_OPTS) && defined(__SSSE3__)
+		if (e == 0 && __builtin_expect(0 == (addr & 7), true))
+		{
+			// this compiles to pshufb so it's pretty fast, before SSSE3 I would not trust this though...
+		    Vec8b v = *reinterpret_cast<Vec8b *>(&rsp->dmem[addr / sizeof(uint32_t)]);
+		    Vec8h vh = __builtin_convertvector(v, Vec8h);
+		    Vec8h vsh = __builtin_shufflevector(vh, vh, 3, 2, 1, 0, 7, 6, 5, 4);
+		    vsh <<= 8;
+			*reinterpret_cast<Vec8h *>(rsp->cp2.regs[rt].e) = vsh;
+		}
+		else
+#endif
+	    {
+		    const unsigned index = (addr & 7) - e;
+		    addr &= ~7;
 
-		auto *reg = rsp->cp2.regs[rt].e;
-		for (unsigned i = 0; i < 8; i++)
-			reg[i] = READ_MEM_U8(rsp->dmem, (addr + (i + index & 0xf)) & 0xfff) << 8;
+		    auto *reg = rsp->cp2.regs[rt].e;
+		    for (unsigned i = 0; i < 8; i++)
+			    reg[i] = READ_MEM_U8(rsp->dmem, (addr + (i + index & 0xf)) & 0xfff) << 8;
+		}
 	}
 
 	IMPL_LS(SPV)
@@ -348,9 +387,9 @@ namespace LS
 #ifdef USE_VEC_OPTS
 			if (0 == e)
 		    {
-			    Vec16b v = *reinterpret_cast<Vec16b *>(&rsp->dmem[addr / sizeof(uint32_t)]);
-			    Vec16b *addrp = reinterpret_cast<Vec16b *>(rsp->cp2.regs[rt].e);
-			    *addrp = __builtin_shufflevector(v, v, 2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13);
+			    Vec8h v = *reinterpret_cast<Vec8h *>(&rsp->dmem[addr / sizeof(uint32_t)]);
+			    Vec8h *vout = reinterpret_cast<Vec8h *>(rsp->cp2.regs[rt].e);
+			    *vout = __builtin_shufflevector(v, v, 1, 0, 3, 2, 5, 4, 7, 6);
 			}
 			else
 #endif
@@ -380,9 +419,10 @@ namespace LS
 #ifdef USE_VEC_OPTS
 			if (0 == e)
 		    {
-			    Vec16b v = *reinterpret_cast<Vec16b *>(rsp->cp2.regs[rt].e);
-			    Vec16b *addrp = reinterpret_cast<Vec16b*>(&rsp->dmem[addr / sizeof(uint32_t)]);
-			    *addrp = __builtin_shufflevector(v, v, 2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13);
+				// this compiles to pshuflw/pshufhw
+			    Vec8h v = *reinterpret_cast<Vec8h *>(rsp->cp2.regs[rt].e);
+			    Vec8h *vout = reinterpret_cast<Vec8h *>(&rsp->dmem[addr / sizeof(uint32_t)]);
+			    *vout = __builtin_shufflevector(v, v, 1, 0, 3, 2, 5, 4, 7, 6);
 			}
 			else
 #endif
