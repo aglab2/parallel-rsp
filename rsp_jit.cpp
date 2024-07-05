@@ -1,5 +1,6 @@
 #include "rsp_jit.hpp"
 #include "rsp_disasm.hpp"
+#include "rsp/packed_ls.h"
 #include "element_instantiate.h"
 #include <utility>
 #include <assert.h>
@@ -1697,7 +1698,9 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		unsigned rd = (instr >> 11) & 31;
 		unsigned imm = (instr >> 7) & 15;
 
-		using LWC2Op = void (JIT_DECL *)(RSP::CPUState *, unsigned rt, int simm, unsigned rs);
+		PackedLS pack = { simm, (uint8_t)rt, (uint8_t) rs };
+
+		using LWC2Op = void (JIT_DECL *)(RSP::CPUState *, uint32_t);
 #define OPS_DECL(e) \
 		static const LWC2Op ops##e[32] = { \
 			LS::RSP_LBV<e>, LS::RSP_LSV<e>, LS::RSP_LLV<e>, LS::RSP_LDV<e> \
@@ -1726,14 +1729,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			regs.flush_mips_register(_jit, rs);
 			jit_begin_call(_jit);
 			jit_pushargr(JIT_REGISTER_STATE);
-			jit_pushargi(rt);
-#ifdef HAS_FASTCALL
-			jit_pushargi(rs);
-			jit_pushargi(simm);
-#else
-			jit_pushargi(simm);
-			jit_pushargi(rs);
-#endif
+			jit_pushargi(pack.value);
 			jit_end_call(_jit, reinterpret_cast<Func>(op));
 		}
 		break;
@@ -1750,7 +1746,9 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		unsigned rd = (instr >> 11) & 31;
 		unsigned imm = (instr >> 7) & 15;
 
-		using SWC2Op = void(JIT_DECL *)(RSP::CPUState *, unsigned rt, int simm, unsigned rs);
+		PackedLS packed = { simm, (uint8_t)rt, (uint8_t)rs };
+
+		using SWC2Op = void(JIT_DECL *)(RSP::CPUState *, uint32_t);
 #define OPS_DECL(e) \
 		static const SWC2Op ops##e[32] = { \
 			LS::RSP_SBV<e>, LS::RSP_SSV<e>, LS::RSP_SLV<e>, LS::RSP_SDV<e> \
@@ -1779,14 +1777,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			regs.flush_mips_register(_jit, rs);
 			jit_begin_call(_jit);
 			jit_pushargr(JIT_REGISTER_STATE);
-			jit_pushargi(rt);
-#ifdef HAS_FASTCALL
-			jit_pushargi(rs);
-			jit_pushargi(simm);
-#else
-			jit_pushargi(simm);
-			jit_pushargi(rs);
-#endif
+			jit_pushargi(packed.value);
 			jit_end_call(_jit, reinterpret_cast<Func>(op));
 		}
 		break;

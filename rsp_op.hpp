@@ -8,7 +8,7 @@ namespace LS
 {
 #define DECL_LS(op)             \
 	template <unsigned e> \
-	void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned rt, int offset, unsigned base)
+	void JIT_DECL RSP_##op(RSP::CPUState *rsp, uint32_t)
 
 DECL_LS(LBV);
 DECL_LS(LSV);

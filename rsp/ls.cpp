@@ -1,6 +1,7 @@
 #include "../state.hpp"
 #include "../jit_decl.h"
 #include "../element_instantiate.h"
+#include "packed_ls.h"
 
 #ifdef TRACE_COP2
 #include <stdio.h>
@@ -27,15 +28,22 @@ using Vec4h = uint16_t __attribute__((vector_size(8)));
 #define READ_VEC_U8(vec, addr) (reinterpret_cast<const uint8_t *>(vec.e)[MES(addr)])
 #define WRITE_VEC_U8(vec, addr, data) (reinterpret_cast<uint8_t *>(vec.e)[MES(addr)] = data)
 
-#define LS_INSTANTIATED(op, i) \
-	template void JIT_DECL RSP_##op<i>(RSP::CPUState * rsp, unsigned rt, int offset, unsigned base);
+#define LS_INSTANTIATED(op, i) template void JIT_DECL RSP_##op<i>(RSP::CPUState * rsp, uint32_t);
 
-#define IMPL_LS(op) \
-template<unsigned e> \
-void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned rt, int offset, unsigned base); \
-ELEMENT_INSTANTIATE(op, LS_INSTANTIATED) \
-template <unsigned e>                                                                       \
-	void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned rt, int offset, unsigned base)
+#define IMPL_LS(op)                                                                   \
+	template <unsigned e>                                                             \
+	void JIT_DECL RSP_##op(RSP::CPUState *rsp, uint32_t);                             \
+	ELEMENT_INSTANTIATE(op, LS_INSTANTIATED)                                          \
+	template <unsigned e>                                                             \
+	static void RSP_##op(RSP::CPUState *rsp, unsigned rt, int offset, unsigned base); \
+	template <unsigned e>                                                             \
+	void JIT_DECL RSP_##op(RSP::CPUState *rsp, uint32_t value)                        \
+	{                                                                                 \
+		PackedLS pack; pack.value = value;                                            \
+		RSP_##op<e>(rsp, pack.rt, pack.offset, pack.base);                            \
+	}                                                                                 \
+	template <unsigned e>                                                             \
+	static void RSP_##op(RSP::CPUState *rsp, unsigned rt, int offset, unsigned base)
 
 namespace LS
 {
