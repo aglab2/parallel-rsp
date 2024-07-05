@@ -2,10 +2,13 @@
 
 #include <stdint.h>
 
-struct PackedVU
+union PackedVU
 {
-	uint8_t vd;
-	uint8_t vs;
-	uint8_t vt;
-	uint8_t _pad;
+	struct
+	{
+		uint16_t vd;
+		uint8_t vs;
+		uint8_t vt;
+	};
+	uint32_t value;
 };

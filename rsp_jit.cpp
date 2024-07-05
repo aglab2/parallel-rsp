@@ -1,6 +1,7 @@
 #include "rsp_jit.hpp"
 #include "rsp_disasm.hpp"
 #include "rsp/packed_ls.h"
+#include "rsp/packed_vu.h"
 #include "element_instantiate.h"
 #include <utility>
 #include <assert.h>
@@ -895,25 +896,23 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		uint32_t vt = (instr >> 16) & 31;
 		uint32_t e = (instr >> 21) & 15;
 
-		using VUOp = void (JIT_DECL *)(RSP::CPUState *, unsigned vd, unsigned vs, unsigned vt);
+		PackedVU packed{ (uint8_t)vd, (uint8_t)vs, (uint8_t)vt };
 
+		using VUOp = void (JIT_DECL *)(RSP::CPUState *, uint32_t);
 		VUOp vuop = nullptr;
 #define OPS_DECL(e) \
-		static const VUOp ops##e[64] = { \
-			VU::RSP_VMULF<e>, VU::RSP_VMULU<e>, VU::RSP_VRNDP<e>, VU::RSP_VMULQ<e>, VU::RSP_VMUDL<e>, VU::RSP_VMUDM<e>, VU::RSP_VMUDN<e>, VU::RSP_VMUDH<e>, \
-			VU::RSP_VMACF<e>, VU::RSP_VMACU<e>, VU::RSP_VRNDN<e>, VU::RSP_VMACQ<e>, VU::RSP_VMADL<e>, VU::RSP_VMADM<e>, VU::RSP_VMADN<e>, VU::RSP_VMADH<e>, \
-			VU::RSP_VADD<e> , VU::RSP_VSUB<e>,  nullptr		    , VU::RSP_VABS<e> , VU::RSP_VADDC<e>, VU::RSP_VSUBC<e>, nullptr		    , nullptr,          \
-			nullptr,          nullptr,          nullptr,          nullptr,          nullptr,          VU::RSP_VSAR<e>,  nullptr,		  nullptr,          \
-			VU::RSP_VLT<e>, VU::RSP_VEQ<e>,   VU::RSP_VNE<e>,   VU::RSP_VGE<e>,          \
-		VU::RSP_VCL<e>,   VU::RSP_VCH<e>,   VU::RSP_VCR<e>,   VU::RSP_VMRG<e>,  \
-		                          VU::RSP_VAND<e>,  VU::RSP_VNAND<e>,        \
-		VU::RSP_VOR<e>,   VU::RSP_VNOR<e>, \
-			VU::RSP_VXOR<e>,  VU::RSP_VNXOR<e>,    nullptr,          nullptr,          \
-		VU::RSP_VRCP<e>,  VU::RSP_VRCPL<e>, VU::RSP_VRCPH<e>, VU::RSP_VMOV<e>,  VU::RSP_VRSQ<e>, \
-		VU::RSP_VRSQL<e>,    \
-		VU::RSP_VRSQH<e>, \
-			VU::RSP_VNOP<e>,     nullptr,          nullptr,          nullptr,          nullptr,   \
-		nullptr,          nullptr,          nullptr,          VU::RSP_VNOP<e> \
+		static const VUOp ops##e[64] = {                                                                            \
+		VU::RSP_VMULF<e>, VU::RSP_VMULU<e>, VU::RSP_VRNDP<e>, VU::RSP_VMULQ<e>, VU::RSP_VMUDL<e>, VU::RSP_VMUDM<e>, \
+		VU::RSP_VMUDN<e>, VU::RSP_VMUDH<e>, VU::RSP_VMACF<e>, VU::RSP_VMACU<e>, VU::RSP_VRNDN<e>, VU::RSP_VMACQ<e>, \
+		VU::RSP_VMADL<e>, VU::RSP_VMADM<e>, VU::RSP_VMADN<e>, VU::RSP_VMADH<e>, VU::RSP_VADD<e>,  VU::RSP_VSUB<e>,  \
+		nullptr,          VU::RSP_VABS<e>,  VU::RSP_VADDC<e>, VU::RSP_VSUBC<e>, nullptr,          nullptr,          \
+		nullptr,          nullptr,          nullptr,          nullptr,          nullptr,          VU::RSP_VSAR<e>,  \
+		nullptr,          nullptr,          VU::RSP_VLT<e>,   VU::RSP_VEQ<e>,   VU::RSP_VNE<e>,   VU::RSP_VGE<e>,   \
+		VU::RSP_VCL<e>,   VU::RSP_VCH<e>,   VU::RSP_VCR<e>,   VU::RSP_VMRG<e>,  VU::RSP_VAND<e>,  VU::RSP_VNAND<e>, \
+		VU::RSP_VOR<e>,   VU::RSP_VNOR<e>,  VU::RSP_VXOR<e>,  VU::RSP_VNXOR<e>, nullptr,          nullptr,          \
+		VU::RSP_VRCP<e>,  VU::RSP_VRCPL<e>, VU::RSP_VRCPH<e>, VU::RSP_VMOV<e>,  VU::RSP_VRSQ<e>,  VU::RSP_VRSQL<e>, \
+		VU::RSP_VRSQH<e>, VU::RSP_VNOP<e>,  nullptr,          nullptr,          nullptr,          nullptr,          \
+		nullptr,          nullptr,          nullptr,          VU::RSP_VNOP<e>                                       \
 		};
 
 		switch (e)
@@ -935,15 +934,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		regs.flush_caller_save_registers(_jit);
 		jit_begin_call(_jit);
 		jit_pushargr(JIT_REGISTER_STATE);
-		jit_pushargi(vd);
-		// Don't look ahead, cursed content ahead - I flip params from 3 onwards because fastcall flips arguments and gnu lightning is too dumb :)
-#ifdef HAS_FASTCALL
-		jit_pushargi(vt);
-		jit_pushargi(vs);
-#else
-		jit_pushargi(vs);
-		jit_pushargi(vt);
-#endif
+		jit_pushargi(packed.value);
 		jit_end_call(_jit, (Func) vuop);
 		return;
 	}

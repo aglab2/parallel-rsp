@@ -10,6 +10,7 @@
 
 #include "../state.hpp"
 #include "../rsp_op.hpp"
+#include "packed_vu.h"
 #include "rsp_impl.h"
 #include "element_instantiate.h"
 #include <stdio.h>
@@ -25,14 +26,23 @@
 #endif
 
 #define VU_INSTANTIATED(op, i) \
-	template void JIT_DECL RSP_##op<i>(RSP::CPUState * rsp, unsigned vd, unsigned vs, unsigned vt);
+	template void JIT_DECL RSP_##op<i>(RSP::CPUState * rsp, uint32_t);
 
-#define IMPL_VU(op)                                                                     \
-	template <unsigned e>                                                               \
-	void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt);  \
-	ELEMENT_INSTANTIATE(op, VU_INSTANTIATED)                                            \
-	template <unsigned e>                                                               \
-	void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt)
+#define IMPL_VU(op)                                                                           \
+	template <unsigned e>                                                                     \
+	void JIT_DECL RSP_##op(RSP::CPUState *rsp, uint32_t);                                     \
+	ELEMENT_INSTANTIATE(op, VU_INSTANTIATED)                                                  \
+	template <unsigned e>                                                                     \
+	static void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt); \
+	template <unsigned e>                                                                     \
+	void JIT_DECL RSP_##op(RSP::CPUState *rsp, uint32_t value)                                \
+	{                                                                                         \
+		PackedVU pack;                                                                        \
+		pack.value = value;                                                                   \
+		RSP_##op<e>(rsp, pack.vd, pack.vs, pack.vt);                                          \
+	}                                                                                         \
+	template <unsigned e>                                                                     \
+	static void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt)
 
 namespace VU
 {

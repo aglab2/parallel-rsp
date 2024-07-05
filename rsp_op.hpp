@@ -56,7 +56,7 @@ extern "C"
 namespace VU
 {
 #define DECL_COP2(op) \
-template <unsigned e> void JIT_DECL RSP_##op(RSP::CPUState *rsp, unsigned vd, unsigned vs, unsigned vt)
+template <unsigned e> void JIT_DECL RSP_##op(RSP::CPUState *rsp, uint32_t)
 	DECL_COP2(VMULF);
 	DECL_COP2(VMULU);
 	DECL_COP2(VRNDP);
