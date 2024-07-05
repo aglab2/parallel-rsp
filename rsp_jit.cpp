@@ -1,5 +1,6 @@
 #include "rsp_jit.hpp"
 #include "rsp_disasm.hpp"
+#include "rsp/packed_cp.h"
 #include "rsp/packed_ls.h"
 #include "rsp/packed_vu.h"
 #include "element_instantiate.h"
@@ -1484,10 +1485,10 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			regs.flush_register_window(_jit);
 
 			jit_begin_call(_jit);
+			PackedCP packed{ (uint8_t)rt, (uint8_t)rd };
 			jit_pushargr(JIT_REGISTER_STATE);
-			jit_pushargi(rt);
-			jit_pushargi(rd);
-			jit_end_call(_jit, reinterpret_cast<Func>(RSP_MFC0));
+			jit_pushargi(packed.value);
+			jit_end_call(_jit, reinterpret_cast<Func>(CP::RSP_MFC0));
 			jit_retval(JIT_REGISTER_MODE);
 
 			jit_node_t *noexit = jit_beqi(JIT_REGISTER_MODE, MODE_CONTINUE);
@@ -1502,10 +1503,10 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			regs.flush_register_window(_jit);
 
 			jit_begin_call(_jit);
+			PackedCP packed{ (uint8_t)rt, (uint8_t)rd };
 			jit_pushargr(JIT_REGISTER_STATE);
-			jit_pushargi(rd);
-			jit_pushargi(rt);
-			jit_end_call(_jit, reinterpret_cast<Func>(RSP_MTC0));
+			jit_pushargi(packed.value);
+			jit_end_call(_jit, reinterpret_cast<Func>(CP::RSP_MTC0));
 			jit_retval(JIT_REGISTER_MODE);
 
 			jit_node_t *noexit = jit_beqi(JIT_REGISTER_MODE, MODE_CONTINUE);
@@ -1527,6 +1528,7 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 		unsigned rs = (instr >> 21) & 31;
 		unsigned rt = (instr >> 16) & 31;
 		unsigned imm = (instr >> 7) & 15;
+		PackedCP packed{ (uint8_t)rt, (uint8_t)rd, (uint16_t)imm };
 
 		switch (rs)
 		{
@@ -1536,15 +1538,8 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			regs.flush_mips_register(_jit, rt);
 			jit_begin_call(_jit);
 			jit_pushargr(JIT_REGISTER_STATE);
-			jit_pushargi(rt);
-#ifdef HAS_FASTCALL
-			jit_pushargi(imm);
-			jit_pushargi(rd);
-#else
-			jit_pushargi(rd);
-			jit_pushargi(imm);
-#endif
-			jit_end_call(_jit, reinterpret_cast<Func>(RSP_MFC2));
+			jit_pushargi(packed.value);
+			jit_end_call(_jit, reinterpret_cast<Func>(CP::RSP_MFC2));
 			break;
 		}
 
@@ -1554,9 +1549,8 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			regs.flush_mips_register(_jit, rt);
 			jit_begin_call(_jit);
 			jit_pushargr(JIT_REGISTER_STATE);
-			jit_pushargi(rt);
-			jit_pushargi(rd);
-			jit_end_call(_jit, reinterpret_cast<Func>(RSP_CFC2));
+			jit_pushargi(packed.value);
+			jit_end_call(_jit, reinterpret_cast<Func>(CP::RSP_CFC2));
 			break;
 		}
 
@@ -1566,15 +1560,8 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 			regs.flush_mips_register(_jit, rt);
 			jit_begin_call(_jit);
 			jit_pushargr(JIT_REGISTER_STATE);
-			jit_pushargi(rt);
-#ifdef HAS_FASTCALL
-			jit_pushargi(imm);
-			jit_pushargi(rd);
-#else
-			jit_pushargi(rd);
-			jit_pushargi(imm);
-#endif
-			jit_end_call(_jit, reinterpret_cast<Func>(RSP_MTC2));
+			jit_pushargi(packed.value);
+			jit_end_call(_jit, reinterpret_cast<Func>(CP::RSP_MTC2));
 			break;
 		}
 
@@ -1585,9 +1572,8 @@ void CPU::jit_instruction(jit_state_t *_jit, uint32_t pc, uint32_t instr,
 
 			jit_begin_call(_jit);
 			jit_pushargr(JIT_REGISTER_STATE);
-			jit_pushargi(rt);
-			jit_pushargi(rd);
-			jit_end_call(_jit, reinterpret_cast<Func>(RSP_CTC2));
+			jit_pushargi(packed.value);
+			jit_end_call(_jit, reinterpret_cast<Func>(CP::RSP_CTC2));
 			break;
 		}
 

@@ -37,16 +37,19 @@ DECL_LS(SWV);
 DECL_LS(STV);
 } // namespace LS
 
+namespace CP
+{
+	int JIT_DECL RSP_MFC0(RSP::CPUState *rsp, uint32_t);
+	int JIT_DECL RSP_MTC0(RSP::CPUState *rsp, uint32_t);
+
+	void JIT_DECL RSP_MTC2(RSP::CPUState *rsp, uint32_t);
+    void JIT_DECL RSP_MFC2(RSP::CPUState *rsp, uint32_t);
+    void JIT_DECL RSP_CFC2(RSP::CPUState *rsp, uint32_t);
+    void JIT_DECL RSP_CTC2(RSP::CPUState *rsp, uint32_t);
+    }
+
 extern "C"
 {
-	int JIT_DECL RSP_MFC0(RSP::CPUState *rsp, unsigned rt, unsigned rd);
-	int JIT_DECL RSP_MTC0(RSP::CPUState *rsp, unsigned rd, unsigned rt);
-
-	void JIT_DECL RSP_MTC2(RSP::CPUState *rsp, unsigned rt, unsigned vd, unsigned e);
-	void JIT_DECL RSP_MFC2(RSP::CPUState *rsp, unsigned rt, unsigned vs, unsigned e);
-	void JIT_DECL RSP_CFC2(RSP::CPUState *rsp, unsigned rt, unsigned rd);
-	void JIT_DECL RSP_CTC2(RSP::CPUState *rsp, unsigned rt, unsigned rd);
-
 	void JIT_DECL RSP_CALL(void *opaque, unsigned target, unsigned ret);
 	void JIT_DECL RSP_RETURN(void *opaque, unsigned pc);
 	void JIT_DECL RSP_EXIT(void *opaque, int mode);

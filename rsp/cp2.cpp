@@ -1,7 +1,8 @@
 #include "../state.hpp"
 #include "../jit_decl.h"
+#include "packed_cp.h"
 
-extern "C"
+namespace CP
 {
 
 	void JIT_DECL RSP_CFC2(RSP::CPUState *rsp, unsigned rt, unsigned rd)
@@ -15,6 +16,13 @@ extern "C"
 			rsp->sr[rt] = res;
 	}
 
+    void JIT_DECL RSP_CFC2(RSP::CPUState *rsp, uint32_t value)
+    {
+	    PackedCP packed;
+	    packed.value = value;
+	    return RSP_CFC2(rsp, packed.rt, packed.rd);
+    }
+
 	void JIT_DECL RSP_CTC2(RSP::CPUState *rsp, unsigned rt, unsigned rd)
 	{
 		rt = rsp->sr[rt] & 0xffff;
@@ -27,6 +35,13 @@ extern "C"
 		}
 		rsp_set_flags(rsp->cp2.flags[dst].e, rt);
 	}
+
+    void JIT_DECL RSP_CTC2(RSP::CPUState *rsp, uint32_t value)
+    {
+	    PackedCP packed;
+	    packed.value = value;
+	    return RSP_CTC2(rsp, packed.rt, packed.rd);
+    }
 
 	void JIT_DECL RSP_MTC2(RSP::CPUState *rsp, unsigned rt, unsigned rd, unsigned element)
 	{
@@ -47,6 +62,13 @@ extern "C"
 			e[element >> 1] = v;
 	}
 
+    void JIT_DECL RSP_MTC2(RSP::CPUState *rsp, uint32_t value)
+    {
+	    PackedCP packed;
+	    packed.value = value;
+	    return RSP_MTC2(rsp, packed.rt, packed.rd, packed.e);
+    }
+
 	void JIT_DECL RSP_MFC2(RSP::CPUState *rsp, unsigned rt, unsigned rd, unsigned element)
 	{
 		if (rt == 0)
@@ -65,4 +87,11 @@ extern "C"
 		else
 			rsp->sr[rt] = int16_t(e[lo]);
 	}
+
+    void JIT_DECL RSP_MFC2(RSP::CPUState *rsp, uint32_t value)
+    {
+	    PackedCP packed;
+	    packed.value = value;
+	    return RSP_MFC2(rsp, packed.rt, packed.rd, packed.e);
+    }
 }

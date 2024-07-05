@@ -1,5 +1,6 @@
 #include "../state.hpp"
 #include "../jit_decl.h"
+#include "packed_cp.h"
 
 #ifdef PARALLEL_INTEGRATION
 #include "../Zilmar_Rsp.h"
@@ -19,7 +20,7 @@ extern uint32_t m64p_rsp_yielded_on_semaphore;
 
 using namespace RSP;
 
-extern "C"
+namespace CP
 {
 
 #ifdef INTENSE_DEBUG
@@ -75,6 +76,13 @@ extern "C"
 		//   fprintf(stderr, "READING STATUS REG!\n");
 
 		return MODE_CONTINUE;
+	}
+
+	int JIT_DECL RSP_MFC0(RSP::CPUState* rsp, uint32_t value)
+	{
+	    PackedCP packed;
+	    packed.value = value;
+	    return RSP_MFC0(rsp, packed.rt, packed.rd);
 	}
 
 #define RSP_HANDLE_STATUS_WRITE(flag) \
@@ -316,5 +324,12 @@ extern "C"
 		}
 
 		return MODE_CONTINUE;
-	}
+    }
+
+    int JIT_DECL RSP_MTC0(RSP::CPUState *rsp, uint32_t value)
+    {
+	    PackedCP packed;
+	    packed.value = value;
+	    return RSP_MTC0(rsp, packed.rd, packed.rt);
+    }
 }
