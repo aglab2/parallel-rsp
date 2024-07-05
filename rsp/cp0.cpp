@@ -54,8 +54,11 @@ namespace CP
 			{
 				rsp->sr[rt] = 0;
 			}
+#if 0
 			else
 #endif
+#endif
+#if 0
 			{
 				if (*rsp->cp0.cr[CP0_REGISTER_SP_SEMAPHORE])
 				{
@@ -70,6 +73,7 @@ namespace CP
 				else
 					*rsp->cp0.cr[CP0_REGISTER_SP_SEMAPHORE] = 1;
 			}
+#endif
 		}
 
 		//if (rd == 4) // SP_STATUS_REG
