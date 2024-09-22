@@ -23,6 +23,8 @@ using Vec16b = uint8_t __attribute__((vector_size(16)));
 using Vec8h = uint16_t __attribute__((vector_size(16)));
 using Vec8b = uint8_t  __attribute__((vector_size(8)));
 using Vec4h = uint16_t __attribute__((vector_size(8)));
+using Vec4b = uint8_t  __attribute__((vector_size(4)));
+using Vec2h = uint16_t __attribute__((vector_size(4)));
 #endif
 
 #define READ_VEC_U8(vec, addr) (reinterpret_cast<const uint8_t *>(vec.e)[MES(addr)])
@@ -101,10 +103,21 @@ namespace LS
 	IMPL_LS(LLV)
 	{
 		TRACE_LS(LLV);
-		unsigned addr = rsp->sr[base] + offset * 4;
-	    const unsigned end = (e > 12) ? 16 : (e + 4);
-		for (unsigned i = e; i < end; i++)
-			WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+		unsigned addr = (rsp->sr[base] + offset * 4) & 0xfff;
+	    constexpr unsigned end = (e > 12) ? 16 : (e + 4);
+#ifdef USE_VEC_OPTS
+	    if ((0 == (e & 3)) && __builtin_expect(0 == (addr & 3), true))
+	    {
+		    Vec2h v = *reinterpret_cast<Vec2h *>(&rsp->dmem[addr / sizeof(uint32_t)]);
+		    Vec2h *vout = reinterpret_cast<Vec2h *>(&rsp->cp2.regs[rt].e[e >> 1]);
+		    *vout = __builtin_shufflevector(v, v, 1, 0);
+	    }
+	    else
+#endif
+	    {
+		    for (unsigned i = e; i < end; i++)
+			    WRITE_VEC_U8(rsp->cp2.regs[rt], i & 0xf, READ_MEM_U8(rsp->dmem, addr++ & 0xfff));
+		}
 	}
 
 	// Store 32-bit

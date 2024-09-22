@@ -139,7 +139,7 @@ namespace CP
 
 		// Force alignment.
 		length = (length + 0x7) & ~0x7;
-		*rsp->cp0.cr[CP0_REGISTER_DMA_CACHE] &= ~0x3;
+		*rsp->cp0.cr[CP0_REGISTER_DMA_CACHE] &= ~0x7;
 		*rsp->cp0.cr[CP0_REGISTER_DMA_DRAM] &= ~0x7;
 
 		// Check length.
